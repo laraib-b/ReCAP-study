@@ -381,7 +381,7 @@ def _calculate_turbulence(data: pd.DataFrame, lookback: int = 30) -> pd.DataFram
         if history.shape[0] < 5:
             continue
         mean = history.mean(axis=0).to_numpy(dtype=np.float64)
-        cov = history.cov().to_numpy(dtype=np.float64)
+        cov = np.array(history.cov().to_numpy(dtype=np.float64), copy=True)
         cov += np.eye(cov.shape[0], dtype=np.float64) * 1e-6
         current = returns.iloc[index].to_numpy(dtype=np.float64)
         diff = current - mean
