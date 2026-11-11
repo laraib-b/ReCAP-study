@@ -116,11 +116,36 @@ def download_price_data(
     end_date: str,
     batch_size: int = 50,
 ) -> pd.DataFrame:
+    # Avoid curl_cffi/browser-impersonation mismatches common on Colab.
+    import os
+
+    os.environ.setdefault("YF_DISABLE_CURL_CFFI", "1")
+
     frames = []
     for start in range(0, len(tickers), batch_size):
-        batch = tickers[start:start + batch_size]
-        raw = yf.download(batch, start=start_date, end=end_date, auto_adjust=True, progress=False, group_by="ticker", threads=True)
-        frames.extend(_normalize_download_frame(raw=raw, requested_tickers=batch))
+        batch = tickers[start : start + batch_size]
+        try:
+            raw = yf.download(
+                batch,
+                start=start_date,
+                end=end_date,
+                auto_adjust=True,
+                progress=False,
+                group_by="ticker",
+                threads=False,
+            )
+            frames.extend(_normalize_download_frame(raw=raw, requested_tickers=batch))
+        except Exception:
+            for ticker in batch:
+                single = yf.download(
+                    ticker,
+                    start=start_date,
+                    end=end_date,
+                    auto_adjust=True,
+                    progress=False,
+                    threads=False,
+                )
+                frames.extend(_normalize_download_frame(raw=single, requested_tickers=[ticker]))
 
     if not frames:
         raise ValueError("No price data was downloaded.")

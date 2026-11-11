@@ -20,6 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import os
+
+# Colab/yfinance often break on curl_cffi browser impersonation mismatches.
+os.environ.setdefault("YF_DISABLE_CURL_CFFI", "1")
+
 import torch
 
 from recap.data import load_market_data
