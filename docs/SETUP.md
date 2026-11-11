@@ -30,7 +30,17 @@ pip install pytest jupyter
 
 ## Google Colab
 
-Open `notebooks/first_run_colab.ipynb`, run all cells. It clones the upstream repo (or your fork), installs deps, and runs a **tiny** ReCAP pass so you can confirm the stack before scaling steps.
+1. Download the **latest** `notebooks/first_run_colab.ipynb` from GitHub (Colab does not auto-update an already-open notebook when you push).
+2. Upload/open it in Colab → **Connect** → **Run all**.
+3. Section 3 = synthetic smoke. Section 4 = reduced DOW30 pilot (slower, not paper-scale).
+4. Repo URL in the notebook should be `https://github.com/laraib-b/ReCAP-study.git`.
+
+CLI equivalent after clone:
+
+```bash
+python study/smoke_run.py
+python study/reduced_pilot.py --dataset DOW30 --disable-local-cache
+```
 
 ## Portability checklist
 
