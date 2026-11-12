@@ -67,8 +67,8 @@ def _():
 @app.cell
 def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
     os.environ["YF_DISABLE_CURL_CFFI"] = "1"
-    repo = Path(REPO_DIR)
-    if not repo.exists():
+    _repo = Path(REPO_DIR)
+    if not _repo.exists():
         subprocess.check_call(["git", "clone", "--depth", "1", "-b", BRANCH, REPO_URL, REPO_DIR])
     else:
         subprocess.check_call(["git", "-C", REPO_DIR, "fetch", "origin", BRANCH])
@@ -92,7 +92,7 @@ def _(mo, torch):
 
 @app.cell
 def _(device, mo, subprocess):
-    cmd = [
+    _cmd = [
         "python",
         "study/run_study.py",
         "--profile",
@@ -106,60 +106,58 @@ def _(device, mo, subprocess):
         "--disable-local-cache",
         "--no-adapt-control",
     ]
-    print("Running:", " ".join(cmd))
-    completed = subprocess.run(cmd, check=False, text=True, capture_output=True)
-    print(completed.stdout[-4000:] if completed.stdout else "")
-    if completed.returncode != 0:
-        print(completed.stderr[-4000:] if completed.stderr else "")
-        raise RuntimeError(f"study run failed with code {completed.returncode}")
+    print("Running:", " ".join(_cmd))
+    study_run = subprocess.run(_cmd, check=False, text=True, capture_output=True)
+    print(study_run.stdout[-4000:] if study_run.stdout else "")
+    if study_run.returncode != 0:
+        print(study_run.stderr[-4000:] if study_run.stderr else "")
+        raise RuntimeError(f"study run failed with code {study_run.returncode}")
     mo.md("Study run finished.")
-    return (completed,)
+    return (study_run,)
 
 
 @app.cell
-def _(Path, json, mo):
+def _(Path, json, mo, study_run):
+    assert study_run.returncode == 0
     # Prefer a download button. Molab FILES often does not show runtime-created folders.
-    study_dir = Path("/tmp/ReCAP-study/outputs/study")
-    if not study_dir.exists():
-        study_dir = Path("outputs/study")
-    study_files = sorted(study_dir.glob("study_*.json"))
-    assert study_files, f"No study JSON found under {study_dir}"
-    latest = study_files[-1]
-    payload = json.loads(latest.read_text(encoding="utf-8"))
+    _study_dir = Path("/tmp/ReCAP-study/outputs/study")
+    if not _study_dir.exists():
+        _study_dir = Path("outputs/study")
+    _study_files = sorted(_study_dir.glob("study_*.json"))
+    assert _study_files, f"No study JSON found under {_study_dir}"
+    latest = _study_files[-1]
+    _payload = json.loads(latest.read_text(encoding="utf-8"))
 
     rows = []
-    for name, result in payload.get("results", {}).items():
-        m = result["metrics"]
-        d = result["detector"]
+    for _name, _result in _payload.get("results", {}).items():
         rows.append(
             {
-                "variant": name,
-                "CR": m["CR"],
-                "SR": m["SR"],
-                "MDD": m["MDD"],
-                "alarms/yr": d["alarms_per_year"],
-                "adapt/yr": result["adaptations_per_year"],
-                "alias_of": result.get("alias_of"),
+                "variant": _name,
+                "CR": _result["metrics"]["CR"],
+                "SR": _result["metrics"]["SR"],
+                "MDD": _result["metrics"]["MDD"],
+                "alarms/yr": _result["detector"]["alarms_per_year"],
+                "adapt/yr": _result["adaptations_per_year"],
+                "alias_of": _result.get("alias_of"),
             }
         )
 
     cal_rows = []
-    for name, cal in payload.get("calibrations", {}).items():
+    for _name, _cal in _payload.get("calibrations", {}).items():
         cal_rows.append(
             {
-                "budget": name,
-                "target/yr": cal.get("target_alarms_per_year"),
-                "h/σ": cal.get("threshold_scale"),
-                "train/yr": cal.get("train_alarms_per_year"),
-                "feasible": cal.get("feasible"),
-                "alias_of": cal.get("alias_of"),
-                "notes": cal.get("notes"),
+                "budget": _name,
+                "target/yr": _cal.get("target_alarms_per_year"),
+                "h/σ": _cal.get("threshold_scale"),
+                "train/yr": _cal.get("train_alarms_per_year"),
+                "feasible": _cal.get("feasible"),
+                "alias_of": _cal.get("alias_of"),
+                "notes": _cal.get("notes"),
             }
         )
 
-    # Also write a plain copy next to the notebook cwd for easier FILES visibility.
-    local_copy = Path("latest_study.json")
-    local_copy.write_text(latest.read_text(encoding="utf-8"), encoding="utf-8")
+    _local_copy = Path("latest_study.json")
+    _local_copy.write_text(latest.read_text(encoding="utf-8"), encoding="utf-8")
 
     download = mo.download(
         data=latest.read_bytes(),
@@ -167,42 +165,46 @@ def _(Path, json, mo):
         mimetype="application/json",
         label=f"Download {latest.name}",
     )
-    # Fallback: raw JSON preview (copy from here if download button fails).
     preview = json.dumps(
         {
-            "path": str(latest),
-            "calibrations": payload.get("calibrations"),
+            "run_id": _payload.get("run_id"),
+            "git_commit": _payload.get("git_commit"),
+            "calibrations": _payload.get("calibrations"),
             "metrics": {
-                k: {"metrics": v.get("metrics"), "detector": v.get("detector"), "alias_of": v.get("alias_of")}
-                for k, v in payload.get("results", {}).items()
+                _k: {
+                    "metrics": _v.get("metrics"),
+                    "detector": {
+                        "threshold_scale": _v.get("detector", {}).get("threshold_scale"),
+                        "alarms_per_year": _v.get("detector", {}).get("alarms_per_year"),
+                    },
+                    "adaptations_per_year": _v.get("adaptations_per_year"),
+                    "alias_of": _v.get("alias_of"),
+                }
+                for _k, _v in _payload.get("results", {}).items()
             },
+            "synthetic_diagnostic": _payload.get("synthetic_diagnostic"),
         },
         indent=2,
+        default=float,
     )
-    mo.md(
-        f"**Artifact on disk:** `{latest}`  \n"
-        f"**Local copy:** `{local_copy.resolve()}`  \n"
-        "If Download fails, copy the compact preview cell below or use GitHub push."
-    )
-    return cal_rows, download, latest, local_copy, payload, preview, rows, study_files
+    mo.md(f"**Artifact on disk:** `{latest}`")
+    return cal_rows, download, latest, preview, rows
 
 
 @app.cell
 def _(cal_rows, download, mo, pd, preview, rows):
-    results_df = pd.DataFrame(rows)
-    cal_df = pd.DataFrame(cal_rows)
     mo.vstack(
         [
             download,
             mo.md("### Calibration feasibility"),
-            mo.ui.table(cal_df),
+            mo.ui.table(pd.DataFrame(cal_rows)),
             mo.md("### Causal portfolio results"),
-            mo.ui.table(results_df),
+            mo.ui.table(pd.DataFrame(rows)),
             mo.md("### Compact JSON (copy if download fails)"),
             mo.ui.text_area(value=preview, rows=16),
         ]
     )
-    return cal_df, results_df
+    return
 
 
 @app.cell
@@ -218,26 +220,29 @@ def _(mo):
 @app.cell
 def _(Path, github_token, latest, mo, subprocess):
     if not github_token.value:
-        mo.md("Skipping GitHub push (no token). Use the Download button above instead.")
-        push_result = None
+        _msg = mo.md("Skipping GitHub push (no token). Use the Download button above instead.")
     else:
-        cmd = [
-            "python",
-            "study/push_artifact.py",
-            str(latest),
-            "--token",
-            github_token.value,
-            "--branch",
-            "study-sunday",
-        ]
-        completed = subprocess.run(cmd, check=False, text=True, capture_output=True)
-        print(completed.stdout)
-        if completed.returncode != 0:
-            print(completed.stderr)
+        _push = subprocess.run(
+            [
+                "python",
+                "study/push_artifact.py",
+                str(latest),
+                "--token",
+                github_token.value,
+                "--branch",
+                "study-sunday",
+            ],
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        print(_push.stdout)
+        if _push.returncode != 0:
+            print(_push.stderr)
             raise RuntimeError("GitHub push failed")
-        push_result = completed.stdout
-        mo.md("Pushed to GitHub branch `study-sunday` under `results/runs/`.")
-    return (push_result,)
+        _msg = mo.md("Pushed to GitHub branch `study-sunday` under `results/runs/`.")
+    _msg
+    return
 
 
 @app.cell
