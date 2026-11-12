@@ -1,0 +1,26 @@
+{
+  "run_id": "study_micro_dow30_seed0_20261112T185311Z",
+  "git_commit": "86016165cb6f451a2a39fd29185d42b322ae2516",
+  "argv": ["--profile", "micro", "--dataset", "DOW30", "--device", "cpu", "--seed", "0", "--disable-local-cache", "--no-adapt-control"],
+  "profile": "micro",
+  "dataset": "DOW30",
+  "seed": 0,
+  "tickers": ["AXP", "AMGN", "AAPL", "BA", "CAT", "CSCO", "CVX", "GS"],
+  "dates": {"start": "2019-01-01", "train_end": "2020-06-01", "test_end": "2021-06-01"},
+  "calibrations": {
+    "budget_0.5": {"target": 0.5, "threshold_scale": 127.99999952502549, "train_alarms_per_year": 2.129577464788732, "feasible": false},
+    "budget_1": {"target": 1.0, "threshold_scale": 127.99999952502549, "train_alarms_per_year": 2.129577464788732, "feasible": false, "alias_of": "budget_0.5"},
+    "budget_2": {"target": 2.0, "threshold_scale": 127.99999952502549, "train_alarms_per_year": 2.129577464788732, "feasible": true, "alias_of": "budget_0.5"},
+    "train_alarm_dates_at_128sigma": ["2020-01-30", "2020-03-13", "2020-04-28"]
+  },
+  "metrics": {
+    "default_2.5": {"CR": 0.5302, "SR": 2.1958, "MDD": 0.1063, "alarms_per_year": 12.0, "adaptations_per_year": 11.088, "turnover_proxy": 45.43},
+    "budget_128sigma": {"CR": 0.4041, "SR": 1.7179, "MDD": 0.1136, "alarms_per_year": 5.0, "adaptations_per_year": 5.04, "turnover_proxy": 20.18, "test_alarm_dates": ["2021-01-07", "2021-02-08", "2021-03-17", "2021-04-27", "2021-05-28"]},
+    "no_adapt_default": {"CR": 0.5321, "SR": 2.2023, "MDD": 0.1057, "alarms_per_year": 12.0, "adaptations_per_year": 0.0, "turnover_proxy": 58.50}
+  },
+  "synthetic_diagnostic": {
+    "default_2.5": {"injected": [0.75, 1.5, 2.5], "detected": [true, true, true], "delay": [0, 1, 4], "false_alarms_before_shift": [8, 10, 10]},
+    "budget_128sigma": {"injected": [0.75, 1.5, 2.5], "detected": [false, false, false], "false_alarms_before_shift": [0, 0, 0]}
+  },
+  "diagnosis": "Even at 128 sigma the detector still fires (2.1/yr train, 5/yr test) while missing every injected shift. Alarms are driven by persistent drift away from a baseline mean that is never re-estimated, not by threshold-scale noise crossings. The test-time baseline is also estimated from the first half of the test window itself (look-ahead for early alarms)."
+}
