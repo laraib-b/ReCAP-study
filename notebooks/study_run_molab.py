@@ -118,23 +118,15 @@ def _(device, mo, subprocess):
 
 @app.cell
 def _(Path, json, mo):
-    import shutil
-
-    # Study writes under the cloned repo (/tmp/...), but molab's FILES sidebar
-    # only shows the notebook workspace. Copy artifacts here so you can download them.
-    study_dir = Path("outputs/study")
+    # Prefer a download button. Molab FILES often does not show runtime-created folders.
+    study_dir = Path("/tmp/ReCAP-study/outputs/study")
     if not study_dir.exists():
-        study_dir = Path("/tmp/ReCAP-study/outputs/study")
+        study_dir = Path("outputs/study")
     study_files = sorted(study_dir.glob("study_*.json"))
     assert study_files, f"No study JSON found under {study_dir}"
-    latest_src = study_files[-1]
-
-    workspace_dir = Path("study_outputs")
-    workspace_dir.mkdir(exist_ok=True)
-    latest = workspace_dir / latest_src.name
-    shutil.copy2(latest_src, latest)
-
+    latest = study_files[-1]
     payload = json.loads(latest.read_text(encoding="utf-8"))
+
     rows = []
     for name, result in payload.get("results", {}).items():
         m = result["metrics"]
@@ -150,30 +142,31 @@ def _(Path, json, mo):
             }
         )
 
-    mo.md(
-        f"""
-        **Source:** `{latest_src}`  
-        **Copied to workspace (FILES sidebar):** `{latest}`
-        """
+    download = mo.download(
+        data=latest.read_bytes(),
+        filename=latest.name,
+        mimetype="application/json",
+        label=f"Download {latest.name}",
     )
-    return latest, payload, rows, study_files
+    mo.md(f"**Artifact on disk:** `{latest}`")
+    return download, latest, payload, rows, study_files
 
 
 @app.cell
-def _(mo, pd, rows):
+def _(download, mo, pd, rows):
     results_df = pd.DataFrame(rows)
-    mo.ui.table(results_df)
+    mo.vstack([download, mo.ui.table(results_df)])
     return (results_df,)
 
 
 @app.cell
-def _(latest, mo):
+def _(mo):
     mo.md(
-        f"""
+        """
         ## Next
-        1. In the FILES sidebar, open `study_outputs/` and download `{latest.name}`.
-        2. Optional: change `--seed` to 1 and 2 for a 3-seed pilot.
-        3. If micro succeeds and RAM is fine, try `--profile reduced`.
+        1. Click the **Download** button above (ignore FILES sidebar).
+        2. Send that JSON to Cursor.
+        3. Optional later: seeds 1 and 2.
         """
     )
     return
