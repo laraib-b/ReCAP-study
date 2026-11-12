@@ -161,11 +161,47 @@ def _(download, mo, pd, rows):
 
 @app.cell
 def _(mo):
+    github_token = mo.ui.text(
+        label="GitHub token (repo write). Leave empty to skip push.",
+        kind="password",
+    )
+    github_token
+    return (github_token,)
+
+
+@app.cell
+def _(Path, github_token, latest, mo, subprocess):
+    if not github_token.value:
+        mo.md("Skipping GitHub push (no token). Use the Download button above instead.")
+        push_result = None
+    else:
+        cmd = [
+            "python",
+            "study/push_artifact.py",
+            str(latest),
+            "--token",
+            github_token.value,
+            "--branch",
+            "study-sunday",
+        ]
+        completed = subprocess.run(cmd, check=False, text=True, capture_output=True)
+        print(completed.stdout)
+        if completed.returncode != 0:
+            print(completed.stderr)
+            raise RuntimeError("GitHub push failed")
+        push_result = completed.stdout
+        mo.md("Pushed to GitHub branch `study-sunday` under `outputs/study/`.")
+    return (push_result,)
+
+
+@app.cell
+def _(mo):
     mo.md(
         """
         ## Next
-        1. Click the **Download** button above (ignore FILES sidebar).
-        2. Send that JSON to Cursor.
+        1. Prefer **Download** button, or push with a GitHub token above.
+        2. After push, get the file from:
+           `https://github.com/laraib-b/ReCAP-study/tree/study-sunday/outputs/study`
         3. Optional later: seeds 1 and 2.
         """
     )
