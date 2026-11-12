@@ -14,8 +14,7 @@
 
 """ReCAP false-alarm study runner for molab (marimo).
 
-Open on https://molab.marimo.io (or molab.new), upload this file, enable GPU
-if available, then run all cells.
+Open on https://molab.new, upload this file, optionally enable GPU, then run.
 """
 
 import marimo
@@ -26,41 +25,47 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import marimo as mo
-
-    mo.md(
-        r"""
-        # ReCAP study on molab
-
-        Protocol-correct pilot:
-        - fit once at default `h=2.5σ`
-        - calibrate train-only FA budgets 0.5 / 1 / 2 alarms/year
-        - causal eval (no look-ahead max selection)
-        - synthetic-shift diagnostic
-
-        Uses **micro** profile first (safe). Scale later if this succeeds.
-        """
-    )
-    return (mo,)
-
-
-@app.cell
-def _(mo):
-    REPO_URL = "https://github.com/laraib-b/ReCAP-study.git"
-    REPO_DIR = "/tmp/ReCAP-study"
-    BRANCH = "study-sunday"
-
-    mo.md(f"Repo `{REPO_URL}` @ `{BRANCH}` → `{REPO_DIR}`")
-    return BRANCH, REPO_DIR, REPO_URL
-
-
-@app.cell
-def _(BRANCH, REPO_DIR, REPO_URL):
+    import json
     import os
     import subprocess
     import sys
     from pathlib import Path
 
+    import marimo as mo
+    import pandas as pd
+    import torch
+
+    return Path, json, mo, os, pd, subprocess, sys, torch
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        # ReCAP study on molab
+
+        Protocol-correct pilot:
+        - fit once at default h=2.5σ
+        - calibrate train-only FA budgets 0.5 / 1 / 2 alarms/year
+        - causal eval (no look-ahead max selection)
+        - synthetic-shift diagnostic
+
+        Uses **micro** profile first.
+        """
+    )
+    return
+
+
+@app.cell
+def _():
+    REPO_URL = "https://github.com/laraib-b/ReCAP-study.git"
+    REPO_DIR = "/tmp/ReCAP-study"
+    BRANCH = "study-sunday"
+    return BRANCH, REPO_DIR, REPO_URL
+
+
+@app.cell
+def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
     os.environ["YF_DISABLE_CURL_CFFI"] = "1"
     repo = Path(REPO_DIR)
     if not repo.exists():
@@ -74,25 +79,19 @@ def _(BRANCH, REPO_DIR, REPO_URL):
         sys.path.insert(0, REPO_DIR)
 
     commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
-    print("cwd:", os.getcwd())
-    print("commit:", commit)
-    return commit, os, subprocess, sys
+    mo.md(f"**cwd:** `{os.getcwd()}`  \n**commit:** `{commit}`")
+    return (commit,)
 
 
 @app.cell
-def _(mo):
-    import torch
-
+def _(mo, torch):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     mo.md(f"**Device:** `{device}` | cuda available = `{torch.cuda.is_available()}`")
-    return device, torch
+    return (device,)
 
 
 @app.cell
-def _(device, mo):
-    """Run the study. This cell can take a while."""
-    import subprocess
-
+def _(device, mo, subprocess):
     cmd = [
         "python",
         "study/run_study.py",
@@ -118,13 +117,10 @@ def _(device, mo):
 
 
 @app.cell
-def _(mo):
-    import json
-    from pathlib import Path
-
-    files = sorted(Path("outputs/study").glob("study_*.json"))
-    assert files, "No study JSON found under outputs/study"
-    latest = files[-1]
+def _(Path, json, mo):
+    study_files = sorted(Path("outputs/study").glob("study_*.json"))
+    assert study_files, "No study JSON found under outputs/study"
+    latest = study_files[-1]
     payload = json.loads(latest.read_text(encoding="utf-8"))
 
     rows = []
@@ -143,16 +139,14 @@ def _(mo):
         )
 
     mo.md(f"**Latest artifact:** `{latest}`")
-    return files, latest, payload, rows
+    return latest, payload, rows, study_files
 
 
 @app.cell
-def _(mo, rows):
-    import pandas as pd
-
-    df = pd.DataFrame(rows)
-    mo.ui.table(df)
-    return (df,)
+def _(mo, pd, rows):
+    results_df = pd.DataFrame(rows)
+    mo.ui.table(results_df)
+    return (results_df,)
 
 
 @app.cell
