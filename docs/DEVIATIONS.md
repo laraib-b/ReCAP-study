@@ -10,7 +10,7 @@
 ## Study protocol (this project)
 
 - **Causal eval:** disables `max(baseline, adapted)` selection; each segment uses a fixed rule (adapt or not).
-- **Calibration:** threshold scale chosen on **train** feature series only to match predeclared alarms/year (0.5, 1, 2); frozen before test.
+- **Calibration:** threshold scale chosen on **train** feature series only to match predeclared alarms/year (0.5, 1, 2); frozen before test. Search expands `high` up to 128σ and records `feasible=false` when the target cannot be reached (common on short micro windows with `min_segment_days` + 6-feature union at `vote_threshold=1`). Duplicate calibrated scales are evaluated once and aliased.
 - **Isolation:** policy library fitted **once** at default \(h=2.5\sigma\); variants change **test-time** detector threshold only.
 - **Metrics:** portfolio CR/SR/MDD plus test alarm rate and adaptation rate; synthetic-shift delay/miss kept separate.
 - **Compute:** `micro` profile (few tickers, short dates, tiny PPO steps) is for runnable pilots on Colab — label clearly in the paper; scale up if hardware allows before Sunday cutoff.

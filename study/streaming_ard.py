@@ -88,39 +88,66 @@ def calibrate_threshold_scale(
     vote_threshold: int = 1,
     low: float = 0.5,
     high: float = 8.0,
-    max_iters: int = 24,
-) -> tuple[float, DetectorRunLog]:
-    """Train-only search for threshold_scale matching a target alarm rate."""
-    best_scale = high
-    best_log = count_alarms(
-        daily_features,
-        threshold_scale=high,
-        min_segment_days=min_segment_days,
-        lookback_days=lookback_days,
-        vote_threshold=vote_threshold,
-    )
+    max_high: float = 128.0,
+    max_iters: int = 28,
+    relative_tol: float = 0.25,
+) -> tuple[float, DetectorRunLog, dict[str, object]]:
+    """Train-only search for threshold_scale matching a target alarm rate.
 
-    lo, hi = low, high
-    for _ in range(max_iters):
-        mid = 0.5 * (lo + hi)
-        mid_log = count_alarms(
+    Expands the upper bound until the achieved rate is at/below target or the
+    alarm count stops decreasing. Returns metadata describing feasibility.
+    """
+
+    def _eval(scale: float) -> DetectorRunLog:
+        return count_alarms(
             daily_features,
-            threshold_scale=mid,
+            threshold_scale=scale,
             min_segment_days=min_segment_days,
             lookback_days=lookback_days,
             vote_threshold=vote_threshold,
         )
+
+    search_high = float(high)
+    hi_log = _eval(search_high)
+    while hi_log.alarms_per_year > target_alarms_per_year and search_high < max_high:
+        prev_alarms = hi_log.n_alarms
+        next_high = min(search_high * 2.0, max_high)
+        next_log = _eval(next_high)
+        search_high, hi_log = next_high, next_log
+        # Alarm floor from min_segment_days / feature-union; further h won't help.
+        if next_log.n_alarms >= prev_alarms:
+            break
+
+    lo = float(low)
+    hi = float(search_high)
+    best_scale = hi
+    best_log = hi_log
+    for _ in range(max_iters):
+        mid = 0.5 * (lo + hi)
+        mid_log = _eval(mid)
         best_scale, best_log = mid, mid_log
         if mid_log.alarms_per_year > target_alarms_per_year:
             lo = mid
         else:
             hi = mid
 
-    final_log = count_alarms(
-        daily_features,
-        threshold_scale=best_scale,
-        min_segment_days=min_segment_days,
-        lookback_days=lookback_days,
-        vote_threshold=vote_threshold,
-    )
-    return float(best_scale), final_log
+    final_log = _eval(best_scale)
+    rel_err = abs(final_log.alarms_per_year - target_alarms_per_year) / max(target_alarms_per_year, 1e-12)
+    feasible = final_log.alarms_per_year <= target_alarms_per_year * (1.0 + relative_tol)
+    meta = {
+        "target_alarms_per_year": target_alarms_per_year,
+        "threshold_scale": float(best_scale),
+        "achieved_alarms_per_year": final_log.alarms_per_year,
+        "relative_error": float(rel_err),
+        "feasible": bool(feasible),
+        "search_high_used": float(search_high),
+        "notes": (
+            None
+            if feasible
+            else (
+                "Could not reach target alarm rate; min_segment_days and multi-feature "
+                "union likely impose an alarm floor on this window."
+            )
+        ),
+    }
+    return float(best_scale), final_log, meta

@@ -28,9 +28,10 @@ def test_count_alarms_and_calibrate() -> None:
     loose = count_alarms(daily, threshold_scale=0.8, min_segment_days=10)
     tight = count_alarms(daily, threshold_scale=5.0, min_segment_days=10)
     assert tight.n_alarms <= loose.n_alarms
-    scale, log = calibrate_threshold_scale(daily, target_alarms_per_year=1.0, min_segment_days=10)
+    scale, log, meta = calibrate_threshold_scale(daily, target_alarms_per_year=1.0, min_segment_days=10)
     assert scale > 0
     assert log.n_days == len(daily)
+    assert "feasible" in meta
 
 
 def test_synthetic_diagnostic_runs() -> None:

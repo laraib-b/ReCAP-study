@@ -137,7 +137,7 @@ def main() -> None:
     daily_train = base_runner.detector.build_daily_features(train_data)
     calibrations: dict[str, dict[str, object]] = {}
     for budget in budgets:
-        scale, log = calibrate_threshold_scale(
+        scale, log, meta = calibrate_threshold_scale(
             daily_train,
             target_alarms_per_year=budget,
             min_segment_days=args.min_segment_days,
@@ -148,11 +148,24 @@ def main() -> None:
             "train_alarms": log.n_alarms,
             "train_alarms_per_year": log.alarms_per_year,
             "train_alarm_dates": log.alarm_dates,
+            **meta,
         }
 
     variants: dict[str, float] = {"default_2.5": 2.5}
+    scale_owner: dict[float, str] = {2.5: "default_2.5"}
+    aliases: dict[str, str] = {}
     for name, payload in calibrations.items():
-        variants[name] = float(payload["threshold_scale"])
+        scale = float(payload["threshold_scale"])
+        # Deduplicate identical calibrated scales (one eval, aliases for others).
+        match = next((s for s in scale_owner if abs(scale - s) < 1e-6), None)
+        if match is not None:
+            aliases[name] = scale_owner[match]
+            payload["skipped_eval_duplicate_scale"] = True
+            payload["alias_of"] = scale_owner[match]
+            continue
+        variants[name] = scale
+        scale_owner[scale] = name
+        payload["skipped_eval_duplicate_scale"] = False
 
     results: dict[str, object] = {}
     for name, scale in variants.items():
@@ -164,6 +177,9 @@ def main() -> None:
             online_update=True,
             adapt_on_alarm=True,
         )
+    for alias_name, owner in aliases.items():
+        results[alias_name] = dict(results[owner])
+        results[alias_name]["alias_of"] = owner
 
     if args.no_adapt_control:
         runner = clone_fitted_runner(base_runner, threshold_scale=2.5)

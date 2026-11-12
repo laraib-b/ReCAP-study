@@ -139,8 +139,27 @@ def _(Path, json, mo):
                 "MDD": m["MDD"],
                 "alarms/yr": d["alarms_per_year"],
                 "adapt/yr": result["adaptations_per_year"],
+                "alias_of": result.get("alias_of"),
             }
         )
+
+    cal_rows = []
+    for name, cal in payload.get("calibrations", {}).items():
+        cal_rows.append(
+            {
+                "budget": name,
+                "target/yr": cal.get("target_alarms_per_year"),
+                "h/σ": cal.get("threshold_scale"),
+                "train/yr": cal.get("train_alarms_per_year"),
+                "feasible": cal.get("feasible"),
+                "alias_of": cal.get("alias_of"),
+                "notes": cal.get("notes"),
+            }
+        )
+
+    # Also write a plain copy next to the notebook cwd for easier FILES visibility.
+    local_copy = Path("latest_study.json")
+    local_copy.write_text(latest.read_text(encoding="utf-8"), encoding="utf-8")
 
     download = mo.download(
         data=latest.read_bytes(),
@@ -148,15 +167,42 @@ def _(Path, json, mo):
         mimetype="application/json",
         label=f"Download {latest.name}",
     )
-    mo.md(f"**Artifact on disk:** `{latest}`")
-    return download, latest, payload, rows, study_files
+    # Fallback: raw JSON preview (copy from here if download button fails).
+    preview = json.dumps(
+        {
+            "path": str(latest),
+            "calibrations": payload.get("calibrations"),
+            "metrics": {
+                k: {"metrics": v.get("metrics"), "detector": v.get("detector"), "alias_of": v.get("alias_of")}
+                for k, v in payload.get("results", {}).items()
+            },
+        },
+        indent=2,
+    )
+    mo.md(
+        f"**Artifact on disk:** `{latest}`  \n"
+        f"**Local copy:** `{local_copy.resolve()}`  \n"
+        "If Download fails, copy the compact preview cell below or use GitHub push."
+    )
+    return cal_rows, download, latest, local_copy, payload, preview, rows, study_files
 
 
 @app.cell
-def _(download, mo, pd, rows):
+def _(cal_rows, download, mo, pd, preview, rows):
     results_df = pd.DataFrame(rows)
-    mo.vstack([download, mo.ui.table(results_df)])
-    return (results_df,)
+    cal_df = pd.DataFrame(cal_rows)
+    mo.vstack(
+        [
+            download,
+            mo.md("### Calibration feasibility"),
+            mo.ui.table(cal_df),
+            mo.md("### Causal portfolio results"),
+            mo.ui.table(results_df),
+            mo.md("### Compact JSON (copy if download fails)"),
+            mo.ui.text_area(value=preview, rows=16),
+        ]
+    )
+    return cal_df, results_df
 
 
 @app.cell
