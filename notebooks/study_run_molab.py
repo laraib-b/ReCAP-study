@@ -118,11 +118,23 @@ def _(device, mo, subprocess):
 
 @app.cell
 def _(Path, json, mo):
-    study_files = sorted(Path("outputs/study").glob("study_*.json"))
-    assert study_files, "No study JSON found under outputs/study"
-    latest = study_files[-1]
-    payload = json.loads(latest.read_text(encoding="utf-8"))
+    import shutil
 
+    # Study writes under the cloned repo (/tmp/...), but molab's FILES sidebar
+    # only shows the notebook workspace. Copy artifacts here so you can download them.
+    study_dir = Path("outputs/study")
+    if not study_dir.exists():
+        study_dir = Path("/tmp/ReCAP-study/outputs/study")
+    study_files = sorted(study_dir.glob("study_*.json"))
+    assert study_files, f"No study JSON found under {study_dir}"
+    latest_src = study_files[-1]
+
+    workspace_dir = Path("study_outputs")
+    workspace_dir.mkdir(exist_ok=True)
+    latest = workspace_dir / latest_src.name
+    shutil.copy2(latest_src, latest)
+
+    payload = json.loads(latest.read_text(encoding="utf-8"))
     rows = []
     for name, result in payload.get("results", {}).items():
         m = result["metrics"]
@@ -138,7 +150,12 @@ def _(Path, json, mo):
             }
         )
 
-    mo.md(f"**Latest artifact:** `{latest}`")
+    mo.md(
+        f"""
+        **Source:** `{latest_src}`  
+        **Copied to workspace (FILES sidebar):** `{latest}`
+        """
+    )
     return latest, payload, rows, study_files
 
 
@@ -154,7 +171,7 @@ def _(latest, mo):
     mo.md(
         f"""
         ## Next
-        1. Download `{latest}` from the molab file browser.
+        1. In the FILES sidebar, open `study_outputs/` and download `{latest.name}`.
         2. Optional: change `--seed` to 1 and 2 for a 3-seed pilot.
         3. If micro succeeds and RAM is fine, try `--profile reduced`.
         """
