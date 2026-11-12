@@ -116,7 +116,15 @@ def download_price_data(
     end_date: str,
     batch_size: int = 50,
 ) -> pd.DataFrame:
-    # Avoid curl_cffi/browser-impersonation mismatches common on Colab.
+    # Prefer plain requests on Colab/cloud where yfinance+curl_cffi often breaks.
+    try:
+        from .yahoo_requests import download_price_data_requests
+
+        data = download_price_data_requests(tickers=tickers, start_date=start_date, end_date=end_date)
+        return _keep_complete_trading_dates(data, tickers)
+    except Exception:
+        pass
+
     import os
 
     os.environ.setdefault("YF_DISABLE_CURL_CFFI", "1")
@@ -424,6 +432,18 @@ def _ensure_feature_column(df: pd.DataFrame, column: str, values: pd.Series | np
 
 
 def _download_vix_frame(start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
+    try:
+        from .yahoo_requests import download_ticker_history
+
+        frame = download_ticker_history(
+            "^VIX",
+            start_date=start_date.strftime("%Y-%m-%d"),
+            end_date=end_date.strftime("%Y-%m-%d"),
+        )
+        return frame[["date", "close"]].rename(columns={"close": "vix"})
+    except Exception:
+        pass
+
     raw = yf.download("^VIX", start=start_date, end=end_date, auto_adjust=True, progress=False, threads=False)
     if raw.empty:
         return pd.DataFrame({"date": pd.date_range(start_date, end_date, freq="B"), "vix": np.nan})
