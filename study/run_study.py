@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 from copy import deepcopy
 from dataclasses import asdict
@@ -33,6 +34,15 @@ from study.diagnostics import run_synthetic_diagnostic
 from study.market_tickers import get_study_tickers
 from study.reduced_pilot import apply_profile, build_parser as build_pilot_parser
 from study.streaming_ard import calibrate_threshold_scale
+
+
+def git_commit() -> str | None:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
 
 
 def resolve_device(requested: str) -> str:
@@ -213,6 +223,10 @@ def main() -> None:
 
     payload = {
         "mode": "false_alarm_calibrated_study",
+        "run_id": out_path.stem,
+        "created_utc": stamp,
+        "git_commit": git_commit(),
+        "argv": sys.argv[1:],
         "protocol_notes": [
             "Policy library fitted once with default h=2.5σ on train.",
             "Threshold variants change test-time ARD only (isolates detector effect).",

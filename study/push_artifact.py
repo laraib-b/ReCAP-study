@@ -79,7 +79,7 @@ def main() -> None:
     parser.add_argument("--owner", default="laraib-b")
     parser.add_argument("--repo", default="ReCAP-study")
     parser.add_argument("--branch", default="study-sunday")
-    parser.add_argument("--dest-dir", default="outputs/study")
+    parser.add_argument("--dest-dir", default="results/runs")
     args = parser.parse_args()
 
     if not args.token:

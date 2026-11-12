@@ -1,0 +1,25 @@
+{
+  "source": "molab paste 2026-11-12",
+  "mode": "false_alarm_calibrated_study",
+  "profile": "micro",
+  "dataset": "DOW30",
+  "seed": 0,
+  "tickers": ["AXP", "AMGN", "AAPL", "BA", "CAT", "CSCO", "CVX", "GS"],
+  "dates": {"start": "2019-01-01", "train_end": "2020-06-01", "test_end": "2021-06-01"},
+  "calibration_note": "All budgets hit ceiling h≈8.0 with ~10.65 train alarms/yr — targets 0.5/1/2 not reached; budget variants identical.",
+  "calibrations": {
+    "budget_0.5": {"target": 0.5, "threshold_scale": 7.999999552965164, "train_alarms_per_year": 10.647887323943662},
+    "budget_1": {"target": 1.0, "threshold_scale": 7.999999552965164, "train_alarms_per_year": 10.647887323943662},
+    "budget_2": {"target": 2.0, "threshold_scale": 7.999999552965164, "train_alarms_per_year": 10.647887323943662}
+  },
+  "metrics": {
+    "default_2.5": {"CR": 0.5302, "SR": 2.1958, "MDD": 0.1063, "alarms_per_year": 12.0, "adaptations_per_year": 11.088},
+    "budget_collapsed_8sigma": {"CR": 0.5331, "SR": 2.1798, "MDD": 0.1010, "alarms_per_year": 10.0, "adaptations_per_year": 10.040},
+    "no_adapt_default": {"CR": 0.5321, "SR": 2.2023, "MDD": 0.1057, "alarms_per_year": 12.0, "adaptations_per_year": 0.0}
+  },
+  "synthetic_highlight": {
+    "default_2.5_false_alarms_before_shift": [8, 10, 10],
+    "budget_8sigma_false_alarms_before_shift": [0, 0, 0],
+    "note": "Higher threshold cut pre-shift FAs to zero with modest delay increase across injected magnitudes 0.75/1.5/2.5."
+  }
+}

@@ -236,7 +236,7 @@ def _(Path, github_token, latest, mo, subprocess):
             print(completed.stderr)
             raise RuntimeError("GitHub push failed")
         push_result = completed.stdout
-        mo.md("Pushed to GitHub branch `study-sunday` under `outputs/study/`.")
+        mo.md("Pushed to GitHub branch `study-sunday` under `results/runs/`.")
     return (push_result,)
 
 
@@ -247,7 +247,7 @@ def _(mo):
         ## Next
         1. Prefer **Download** button, or push with a GitHub token above.
         2. After push, get the file from:
-           `https://github.com/laraib-b/ReCAP-study/tree/study-sunday/outputs/study`
+           `https://github.com/laraib-b/ReCAP-study/tree/study-sunday/results/runs`
         3. Optional later: seeds 1 and 2.
         """
     )
