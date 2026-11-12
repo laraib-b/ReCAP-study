@@ -26,8 +26,17 @@ This folder extends the upstream minimal ReCAP implementation. It does **not** r
 ## Quick local smoke (after venv + deps)
 
 ```bash
-python -m pytest tests/test_smoke.py -q
+python -m pytest tests/test_smoke.py tests/test_study_calibration.py -q
 python study/smoke_run.py
 ```
 
-See `docs/` for deviations and baseline logs once Phase A completes.
+## Study run (causal + FA calibration)
+
+```bash
+python study/run_study.py --profile micro --dataset DOW30 --seed 0 --disable-local-cache --no-adapt-control
+python study/aggregate.py outputs/study/study_....json
+```
+
+Colab notebook: `notebooks/study_run_colab.ipynb`
+
+See `docs/DEVIATIONS.md` for protocol claims and limits.
