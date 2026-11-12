@@ -18,12 +18,15 @@ def evaluate_causal(
     *,
     online_update: bool = True,
     adapt_on_alarm: bool = True,
+    history: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """Evaluate chronologically with fixed per-segment decision rules.
 
     Protocol:
-    - Segment test data with the fitted detector (CUSUM decisions at t use only
-      past observations under the repo's fixed baseline window).
+    - Segment test data with the fitted detector. In ARD paper mode, ``history``
+      (train) is streamed first, so every alarm at t uses only data up to t.
+      In repo mode the reference window is the start of the test series itself,
+      so early test alarms depend on later test data.
     - For each completed segment, trade with either the adaptive path or the
       frozen library path — never choose after seeing both terminal values.
     - Optionally promote the adapted vector into the library after the segment.
@@ -32,15 +35,11 @@ def evaluate_causal(
         raise RuntimeError("ReCAP must be fitted before causal evaluation.")
 
     test_data = test_data[test_data["tic"].isin(runner.tickers)].copy()
-    daily = runner.detector.build_daily_features(test_data)
-    detector_log = count_alarms(
-        daily,
-        threshold_scale=runner.config.cusum_threshold_scale,
-        min_segment_days=runner.config.min_segment_days,
-        vote_threshold=runner.config.ard_vote_threshold,
-    )
+    if history is not None:
+        history = history[history["tic"].isin(runner.tickers)].copy()
+    detector_log = count_alarms(runner.detector, test_data, history=history)
 
-    segments = runner.detector.slice_segments(test_data)
+    segments = runner.detector.slice_segments(test_data, history=history)
     if not segments:
         raise ValueError("Test data does not contain any valid segments.")
 
@@ -146,6 +145,7 @@ def evaluate_causal(
         "turnover_proxy": turnover_total,
         "transaction_cost_proxy": cost_total,
         "detector": {
+            "mode": runner.detector.mode,
             "threshold_scale": detector_log.threshold_scale,
             "n_alarms": detector_log.n_alarms,
             "alarms_per_year": detector_log.alarms_per_year,

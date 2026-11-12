@@ -1,98 +1,75 @@
-"""Synthetic-shift detector diagnostic (separate from market portfolio results)."""
+"""Injected-shift detector diagnostic on no-change simulations (not market performance)."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-
 import numpy as np
-import pandas as pd
 
-from recap.data import MARKET_FEATURE_COLUMNS
-from study.streaming_ard import count_alarms
-
-
-@dataclass
-class ShiftCaseResult:
-    shift_day: int
-    magnitude: float
-    threshold_scale: float
-    detected: bool
-    detection_delay: int | None
-    missed: bool
-    n_alarms: int
-    false_alarms_before_shift: int
-
-
-def make_feature_series(
-    n_days: int = 400,
-    shift_day: int = 250,
-    magnitude: float = 1.5,
-    seed: int = 0,
-) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    dates = pd.date_range("2018-01-01", periods=n_days, freq="B")
-    data = {"date": dates}
-    for column in MARKET_FEATURE_COLUMNS:
-        noise = rng.normal(0.0, 1.0, size=n_days)
-        series = noise.copy()
-        series[shift_day:] += magnitude
-        data[column] = series
-    return pd.DataFrame(data)
-
-
-def score_detection(
-    daily_features: pd.DataFrame,
-    *,
-    shift_day: int,
-    threshold_scale: float,
-    detection_window: int = 30,
-    min_segment_days: int = 20,
-) -> ShiftCaseResult:
-    log = count_alarms(
-        daily_features,
-        threshold_scale=threshold_scale,
-        min_segment_days=min_segment_days,
-    )
-    post = [e.index for e in log.events if shift_day <= e.index <= shift_day + detection_window]
-    pre = [e.index for e in log.events if e.index < shift_day]
-    detected = len(post) > 0
-    delay = int(post[0] - shift_day) if detected else None
-    return ShiftCaseResult(
-        shift_day=shift_day,
-        magnitude=float(daily_features.iloc[shift_day][MARKET_FEATURE_COLUMNS[0]] - daily_features.iloc[shift_day - 1][MARKET_FEATURE_COLUMNS[0]]),
-        threshold_scale=threshold_scale,
-        detected=detected,
-        detection_delay=delay,
-        missed=not detected,
-        n_alarms=log.n_alarms,
-        false_alarms_before_shift=len(pre),
-    )
+from recap.ard import AdaptiveRegimeDetector
+from study.streaming_ard import NullModel, simulate_null, with_threshold
 
 
 def run_synthetic_diagnostic(
+    detector: AdaptiveRegimeDetector,
+    null_model: NullModel,
     threshold_scales: dict[str, float],
     *,
-    magnitudes: tuple[float, ...] = (0.75, 1.5, 2.5),
-    detection_window: int = 30,
-    seed: int = 0,
+    sim_days: int,
+    reference_days: int,
+    magnitudes: tuple[float, ...] = (1.0, 2.0, 3.0, -2.0),
+    shift_offset_days: int = 252,
+    detection_window: int = 60,
+    n_reps: int = 50,
+    seed: int = 30_000,
 ) -> dict[str, object]:
+    """Add a step of ``magnitude`` reference-window sigmas to every ARD feature.
+
+    Change dates are known here, so alarms before the shift are genuine false
+    alarms of the simulation. Negative magnitudes probe the one-sided detector.
+    """
+    shift_day = reference_days + shift_offset_days
+    if shift_day + detection_window >= sim_days:
+        raise ValueError("Simulation too short for the requested shift and detection window.")
+
+    base_sims = simulate_null(null_model, sim_days, n_reps, seed=seed)
     rows: list[dict[str, object]] = []
-    for mag_i, magnitude in enumerate(magnitudes):
-        features = make_feature_series(magnitude=magnitude, seed=seed + mag_i)
+    for magnitude in magnitudes:
+        shifted = []
+        for frame in base_sims:
+            frame = frame.copy()
+            for column in null_model.columns:
+                sigma = float(frame[column].iloc[:reference_days].std(ddof=0))
+                frame.loc[shift_day:, column] = frame.loc[shift_day:, column] + magnitude * sigma
+            shifted.append(frame)
+
         for label, scale in threshold_scales.items():
-            result = score_detection(
-                features,
-                shift_day=250,
-                threshold_scale=scale,
-                detection_window=detection_window,
+            sim_detector = with_threshold(detector, scale)
+            sim_detector.initial_reference_days = reference_days
+            delays: list[int] = []
+            pre_alarms = 0
+            for frame in shifted:
+                alarms = sim_detector.alarm_indices(frame, reference_days)
+                pre_alarms += sum(1 for a in alarms if a < shift_day)
+                hits = [a for a in alarms if shift_day <= a <= shift_day + detection_window]
+                if hits:
+                    delays.append(int(hits[0] - shift_day))
+            pre_years = n_reps * (shift_day - reference_days) / 252.0
+            rows.append(
+                {
+                    "label": label,
+                    "threshold_scale": float(scale),
+                    "shift_sigma": float(magnitude),
+                    "detection_rate": len(delays) / n_reps,
+                    "median_delay_days": float(np.median(delays)) if delays else None,
+                    "pre_shift_false_alarms_per_year": pre_alarms / pre_years,
+                }
             )
-            payload = asdict(result)
-            payload["label"] = label
-            payload["injected_magnitude"] = magnitude
-            rows.append(payload)
     return {
         "mode": "synthetic_shift_diagnostic",
         "warning": "Injected-shift metrics are detector diagnostics only, not market performance.",
+        "base_process": "held-out no-change VAR(1) simulations",
+        "shift_day": shift_day,
         "detection_window": detection_window,
+        "n_reps": n_reps,
+        "seed": seed,
         "results": rows,
     }

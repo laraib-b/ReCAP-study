@@ -1,5 +1,7 @@
 # Seed-0 micro study results (molab)
 
+> **Superseded protocol.** Both runs below used the released detector (`ard_mode="repo"`) and calibrated against historical train alarms. Later runs use the paper-faithful detector and no-change-simulation calibration; see `docs/DEVIATIONS.md`. Historical alarms here are alarms, not false alarms.
+
 **Run id:** `study_micro_dow30_seed0_20261112T180251Z`  
 **Profile:** micro · DOW30 · 8 tickers · 2019-01-01 → 2021-06-01 · CPU · causal eval  
 **Warning:** pilot-scale only; not paper Table 2 replication.

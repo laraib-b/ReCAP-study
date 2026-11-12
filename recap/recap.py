@@ -36,6 +36,8 @@ class ReCAPConfig:
     min_segment_days: int = 60
     cusum_threshold_scale: float = 2.5
     ard_vote_threshold: int = 1
+    ard_mode: str = "repo"
+    ard_initial_reference_days: int | None = None
     gate_epochs: int = 200
     gate_target_temperature: float = 0.1
     min_policy_vector_norm: float = 1e-4
@@ -73,6 +75,8 @@ class ReCAP:
             min_segment_days=config.min_segment_days,
             threshold_scale=config.cusum_threshold_scale,
             vote_threshold=config.ard_vote_threshold,
+            mode=config.ard_mode,
+            initial_reference_days=config.ard_initial_reference_days,
         )
 
         self.base_model: PPO | None = None
@@ -109,6 +113,11 @@ class ReCAP:
         set_seed(self.config.seed)
         self.tickers = sorted(train_data["tic"].unique().tolist())
         self.gate_reference_data = train_data.copy()
+        if self.config.ard_mode == "paper" and self.config.ard_initial_reference_days is None:
+            # Pin the reference window to train so test-time streaming replays the same detector.
+            reference_days = self.detector.reference_days_for(int(train_data["date"].nunique()))
+            self.config.ard_initial_reference_days = reference_days
+            self.detector.initial_reference_days = reference_days
         train_segments = self.detector.slice_segments(train_data)
         pretrain_timesteps = self._resolve_pretrain_timesteps(train_segments)
 

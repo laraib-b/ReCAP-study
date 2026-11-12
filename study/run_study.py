@@ -25,7 +25,6 @@ os.environ.setdefault("YF_DISABLE_CURL_CFFI", "1")
 import pandas as pd
 import torch
 
-from recap.ard import AdaptiveRegimeDetector
 from recap.data import load_market_data
 from recap.recap import ReCAP, ReCAPConfig
 from recap.utils import split_by_date
@@ -33,7 +32,14 @@ from study.causal_eval import evaluate_causal
 from study.diagnostics import run_synthetic_diagnostic
 from study.market_tickers import get_study_tickers
 from study.reduced_pilot import apply_profile, build_parser as build_pilot_parser
-from study.streaming_ard import calibrate_threshold_scale
+from study.streaming_ard import (
+    calibrate_threshold_scale,
+    count_alarms,
+    default_null_rate,
+    fit_null_model,
+    simulate_null,
+    with_threshold,
+)
 
 
 def git_commit() -> str | None:
@@ -65,6 +71,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also run no-adaptation causal control",
     )
+    parser.add_argument(
+        "--ard-mode",
+        choices=["paper", "repo"],
+        default="paper",
+        help="paper: one-sided CUSUM with mu0 re-estimation and historical reference (paper Eq.); "
+        "repo: original release behaviour",
+    )
+    parser.add_argument("--null-cal-reps", type=int, default=100, help="No-change sims used to choose h")
+    parser.add_argument("--null-holdout-reps", type=int, default=200, help="Held-out no-change sims for reporting")
+    parser.add_argument("--null-horizon-days", type=int, default=1008, help="Post-reference days per simulation")
     return parser
 
 
@@ -85,11 +101,7 @@ def clone_fitted_runner(base: ReCAP, threshold_scale: float) -> ReCAP:
     cloned.gate_reference_data = (
         None if base.gate_reference_data is None else base.gate_reference_data.copy()
     )
-    cloned.detector = AdaptiveRegimeDetector(
-        min_segment_days=cfg.min_segment_days,
-        threshold_scale=cfg.cusum_threshold_scale,
-        vote_threshold=cfg.ard_vote_threshold,
-    )
+    cloned.detector = with_threshold(base.detector, cfg.cusum_threshold_scale)
     return cloned
 
 
@@ -135,30 +147,58 @@ def main() -> None:
         gate_epochs=args.gate_epochs,
         min_segment_days=args.min_segment_days,
         cusum_threshold_scale=2.5,
+        ard_mode=args.ard_mode,
         seed=args.seed,
         device=device,
         total_training_steps=None,
     )
 
-    print(json.dumps({"phase": "fit_once_default_detector", "threshold_scale": 2.5}, indent=2))
+    print(json.dumps({"phase": "fit_once_default_detector", "threshold_scale": 2.5, "ard_mode": args.ard_mode}, indent=2))
     base_runner = ReCAP(config=base_config, tickers=tickers, use_vix=True)
     base_runner.fit(train_data)
+    detector = base_runner.detector
+    history = train_data[train_data["tic"].isin(base_runner.tickers)].copy()
 
-    daily_train = base_runner.detector.build_daily_features(train_data)
+    daily_train = detector.build_daily_features(history)
+    train_reference_days = detector.reference_days_for(len(daily_train))
+    null_model = fit_null_model(daily_train, train_reference_days)
+    sim_days = train_reference_days + int(args.null_horizon_days)
+    sim_reference_days = detector.reference_days_for(sim_days)
+    print(json.dumps({"phase": "simulate_no_change", **null_model.describe()}, indent=2, default=float))
+    calibration_sims = simulate_null(null_model, sim_days, args.null_cal_reps, seed=10_000 + args.seed)
+    holdout_sims = simulate_null(null_model, sim_days, args.null_holdout_reps, seed=20_000 + args.seed)
+
+    null_calibration: dict[str, object] = {
+        "null_model": null_model.describe(),
+        "sim_days": sim_days,
+        "sim_reference_days": sim_reference_days,
+        "calibration_reps": args.null_cal_reps,
+        "holdout_reps": args.null_holdout_reps,
+        "calibration_seed": 10_000 + args.seed,
+        "holdout_seed": 20_000 + args.seed,
+        "default_2.5": default_null_rate(detector, holdout_sims, sim_reference_days),
+    }
+
     calibrations: dict[str, dict[str, object]] = {}
     for budget in budgets:
-        scale, log, meta = calibrate_threshold_scale(
-            daily_train,
+        print(json.dumps({"phase": "calibrate_h", "target_alarms_per_year": budget}, indent=2))
+        scale, meta = calibrate_threshold_scale(
+            detector,
+            calibration_sims,
+            holdout_sims,
+            reference_days=sim_reference_days,
             target_alarms_per_year=budget,
-            min_segment_days=args.min_segment_days,
         )
-        calibrations[f"budget_{budget:g}"] = {
-            "target_alarms_per_year": budget,
-            "threshold_scale": scale,
-            "train_alarms": log.n_alarms,
-            "train_alarms_per_year": log.alarms_per_year,
-            "train_alarm_dates": log.alarm_dates,
-            **meta,
+        calibrations[f"budget_{budget:g}"] = meta
+
+    historical_train_alarms: dict[str, object] = {}
+    for name, scale in {"default_2.5": 2.5, **{k: v["threshold_scale"] for k, v in calibrations.items()}}.items():
+        log = count_alarms(with_threshold(detector, scale), history)
+        historical_train_alarms[name] = {
+            "threshold_scale": float(scale),
+            "n_alarms": log.n_alarms,
+            "alarms_per_year": log.alarms_per_year,
+            "alarm_dates": log.alarm_dates,
         }
 
     variants: dict[str, float] = {"default_2.5": 2.5}
@@ -186,6 +226,7 @@ def main() -> None:
             test_data,
             online_update=True,
             adapt_on_alarm=True,
+            history=history,
         )
     for alias_name, owner in aliases.items():
         results[alias_name] = dict(results[owner])
@@ -198,11 +239,20 @@ def main() -> None:
             test_data,
             online_update=False,
             adapt_on_alarm=False,
+            history=history,
         )
 
     synthetic = None
     if not args.skip_synthetic:
-        synthetic = run_synthetic_diagnostic({k: float(v) for k, v in variants.items()})
+        print(json.dumps({"phase": "synthetic_shift_diagnostic"}, indent=2))
+        synthetic = run_synthetic_diagnostic(
+            detector,
+            null_model,
+            {k: float(v) for k, v in variants.items()},
+            sim_days=sim_days,
+            reference_days=sim_reference_days,
+            seed=30_000 + args.seed,
+        )
 
     out_dir = ROOT / "outputs" / "study"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -228,11 +278,17 @@ def main() -> None:
         "git_commit": git_commit(),
         "argv": sys.argv[1:],
         "protocol_notes": [
+            f"ARD mode: {args.ard_mode} (see docs/DEVIATIONS.md).",
             "Policy library fitted once with default h=2.5σ on train.",
-            "Threshold variants change test-time ARD only (isolates detector effect).",
-            "Causal eval disables max(baseline, adapted) look-ahead selection.",
-            "Train-only calibration; thresholds frozen before test eval.",
+            "Threshold variants change test-time ARD h only; features, kappa, mu0 updates and resets unchanged.",
+            "h calibrated on no-change simulations (VAR(1) fitted to the train reference window); "
+            "achieved rate reported on separate held-out simulations.",
+            "Historical (train/test) alarms are reported as alarms, not labelled false.",
+            "Causal eval disables max(baseline, adapted) look-ahead selection; "
+            "in paper mode train is streamed through the detector before test.",
+            "Thresholds frozen before test eval.",
         ],
+        "ard_mode": args.ard_mode,
         "profile": args.profile,
         "dataset": args.dataset,
         "seed": args.seed,
@@ -248,7 +304,9 @@ def main() -> None:
             "Do not claim paper Table 2 replication."
         ),
         "config": asdict(base_config),
+        "null_calibration": null_calibration,
         "calibrations": calibrations,
+        "historical_train_alarms": historical_train_alarms,
         "results": compact_results,
         "synthetic_diagnostic": synthetic,
     }
@@ -256,13 +314,15 @@ def main() -> None:
 
     summary = {
         "saved": str(out_path),
+        "default_holdout_null_rate": null_calibration["default_2.5"]["holdout_sim_alarms_per_year"],
         "calibrations": {
             name: {
-                "target": payload["target_alarms_per_year"],
-                "threshold_scale": payload["threshold_scale"],
-                "train_alarms_per_year": payload["train_alarms_per_year"],
+                "target": cal["target_alarms_per_year"],
+                "threshold_scale": cal["threshold_scale"],
+                "holdout_sim_alarms_per_year": cal["holdout_sim_alarms_per_year"],
+                "within_tolerance": cal["within_tolerance"],
             }
-            for name, payload in calibrations.items()
+            for name, cal in calibrations.items()
         },
         "variants": {
             name: {

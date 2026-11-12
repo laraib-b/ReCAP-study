@@ -45,10 +45,11 @@ def _(mo):
         # ReCAP study on molab
 
         Protocol-correct pilot:
+        - ARD in paper mode (one-sided CUSUM, μ0 re-estimated after alarms, train streamed before test)
         - fit once at default h=2.5σ
-        - calibrate train-only FA budgets 0.5 / 1 / 2 alarms/year
+        - calibrate h on no-change simulations for 0.5 / 1 / 2 alarms/year; report held-out sim rate
         - causal eval (no look-ahead max selection)
-        - synthetic-shift diagnostic
+        - injected-shift diagnostic on held-out simulations
 
         Uses **micro** profile first.
         """
@@ -142,17 +143,27 @@ def _(Path, json, mo, study_run):
             }
         )
 
-    cal_rows = []
+    _null = _payload.get("null_calibration", {})
+    _hist = _payload.get("historical_train_alarms", {})
+    cal_rows = [
+        {
+            "variant": "default_2.5",
+            "target/yr (no-change sims)": None,
+            "h/σ": 2.5,
+            "held-out sim alarms/yr": _null.get("default_2.5", {}).get("holdout_sim_alarms_per_year"),
+            "within tolerance": None,
+            "historical train alarms/yr": _hist.get("default_2.5", {}).get("alarms_per_year"),
+        }
+    ]
     for _name, _cal in _payload.get("calibrations", {}).items():
         cal_rows.append(
             {
-                "budget": _name,
-                "target/yr": _cal.get("target_alarms_per_year"),
+                "variant": _name,
+                "target/yr (no-change sims)": _cal.get("target_alarms_per_year"),
                 "h/σ": _cal.get("threshold_scale"),
-                "train/yr": _cal.get("train_alarms_per_year"),
-                "feasible": _cal.get("feasible"),
-                "alias_of": _cal.get("alias_of"),
-                "notes": _cal.get("notes"),
+                "held-out sim alarms/yr": _cal.get("holdout_sim_alarms_per_year"),
+                "within tolerance": _cal.get("within_tolerance"),
+                "historical train alarms/yr": _hist.get(_name, {}).get("alarms_per_year"),
             }
         )
 
@@ -169,7 +180,10 @@ def _(Path, json, mo, study_run):
         {
             "run_id": _payload.get("run_id"),
             "git_commit": _payload.get("git_commit"),
+            "ard_mode": _payload.get("ard_mode"),
+            "null_calibration": _payload.get("null_calibration"),
             "calibrations": _payload.get("calibrations"),
+            "historical_train_alarms": _payload.get("historical_train_alarms"),
             "metrics": {
                 _k: {
                     "metrics": _v.get("metrics"),
@@ -196,7 +210,7 @@ def _(cal_rows, download, mo, pd, preview, rows):
     mo.vstack(
         [
             download,
-            mo.md("### Calibration feasibility"),
+            mo.md("### h calibration (no-change simulations) and historical train alarms"),
             mo.ui.table(pd.DataFrame(cal_rows)),
             mo.md("### Causal portfolio results"),
             mo.ui.table(pd.DataFrame(rows)),
