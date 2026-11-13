@@ -34,6 +34,8 @@ All of this used the **micro** profile: 8 tickers, 2019→2021, tiny PPO. Paper-
 ## What is still needed for the paper
 
 1. **Fuller profile on molab** (`reduced`: more dates, all DOW30 tickers, larger PPO). Seed 0 first to measure time and memory.
+   - Notebook: `notebooks/study_run_molab.py` (JOBS already set to one `reduced` seed-0 run).
+   - Upload that file to molab → Run all → leave the tab open → download/push JSON when done.
 2. If that fits, seeds 1–2 on molab.
 3. Write-up: detector mismatch (repo vs paper), simulation calibration, portfolio tables, limitations.
 
