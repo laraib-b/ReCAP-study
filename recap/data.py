@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections import Counter
 from pathlib import Path
 
@@ -61,6 +62,68 @@ LOCAL_PICKLE_FILES = {
 }
 
 
+def drop_unusable_tickers(
+    data: pd.DataFrame,
+    *,
+    max_zero_fraction: float = 0.01,
+    min_coverage_fraction: float = 0.90,
+) -> pd.DataFrame:
+    """Drop unusable tickers, then realign to complete trading dates.
+
+    Removes:
+    - zero/missing closes (Yahoo delistings like WBA often arrive as all-zero rows)
+    - short histories that would otherwise shrink the panel to a late IPO
+      (e.g. DOW from 2019 when peers start in 2008)
+    """
+    if data.empty:
+        raise ValueError("No price data available.")
+    close = pd.to_numeric(data["close"], errors="coerce")
+    frame = data.copy()
+    frame["close"] = close
+    frame["date"] = pd.to_datetime(frame["date"])
+
+    zero_frac = frame.groupby("tic")["close"].apply(lambda s: float(((s.isna()) | (s <= 0)).mean()))
+    keep = [tic for tic, frac in zero_frac.items() if frac <= max_zero_fraction]
+    dropped_zero = sorted(set(frame["tic"].unique()) - set(keep))
+    if not keep:
+        raise ValueError(
+            "No usable tickers after dropping zero/missing prices. "
+            f"Zero fractions: {zero_frac.sort_values(ascending=False).to_dict()}"
+        )
+
+    subset = frame[frame["tic"].isin(keep)]
+    n_dates = subset.groupby("tic")["date"].nunique()
+    max_n = int(n_dates.max())
+    coverage_floor = max(1, int(np.floor(max_n * float(min_coverage_fraction))))
+    keep = [tic for tic in keep if int(n_dates.get(tic, 0)) >= coverage_floor]
+    dropped_short = sorted(set(subset["tic"].unique()) - set(keep))
+    if not keep:
+        raise ValueError(
+            "No usable tickers after dropping short price histories. "
+            f"Date counts: {n_dates.sort_values().to_dict()}"
+        )
+
+    dropped = sorted(set(dropped_zero) | set(dropped_short))
+    if dropped:
+        print(
+            json.dumps(
+                {
+                    "phase": "drop_unusable_tickers",
+                    "dropped": dropped,
+                    "dropped_zero": dropped_zero,
+                    "dropped_short_history": dropped_short,
+                    "zero_fraction": {tic: float(zero_frac[tic]) for tic in dropped_zero},
+                    "n_dates": {tic: int(n_dates[tic]) for tic in dropped_short},
+                    "coverage_floor": coverage_floor,
+                    "kept": len(keep),
+                },
+                default=float,
+            )
+        )
+    filtered = frame[frame["tic"].isin(keep)].copy()
+    return _keep_complete_trading_dates(filtered, keep)
+
+
 def load_market_data(
     dataset_name: str,
     tickers: list[str],
@@ -83,6 +146,7 @@ def load_market_data(
     if local_data is None:
         local_data = download_price_data(tickers=tickers, start_date=start_date, end_date=end_date)
 
+    local_data = drop_unusable_tickers(local_data)
     return add_market_features(local_data, use_vix=use_vix)
 
 
@@ -120,8 +184,9 @@ def download_price_data(
     try:
         from .yahoo_requests import download_price_data_requests
 
-        data = download_price_data_requests(tickers=tickers, start_date=start_date, end_date=end_date)
-        return _keep_complete_trading_dates(data, tickers)
+        # Leave date alignment to drop_unusable_tickers so short IPO histories
+        # (e.g. DOW) can be dropped before intersecting the panel.
+        return download_price_data_requests(tickers=tickers, start_date=start_date, end_date=end_date)
     except Exception:
         pass
 
@@ -160,8 +225,7 @@ def download_price_data(
 
     data = pd.concat(frames, ignore_index=True)
     data["date"] = pd.to_datetime(data["date"])
-    data = data.sort_values(["date", "tic"]).reset_index(drop=True)
-    return _keep_complete_trading_dates(data, tickers)
+    return data.sort_values(["date", "tic"]).reset_index(drop=True)
 
 
 def add_market_features(data: pd.DataFrame, use_vix: bool) -> pd.DataFrame:
@@ -463,12 +527,12 @@ def _load_local_csv(csv_path: Path, tickers: list[str], start_date: str, end_dat
     data = data[data["tic"].isin(tickers)].copy()
     data = data[(data["date"] >= pd.Timestamp(start_date)) & (data["date"] <= pd.Timestamp(end_date))].copy()
     data = data.sort_values(by=["date", "tic"]).reset_index(drop=True)
-    available_tickers = sorted(data["tic"].unique().tolist())
-    if not available_tickers:
+    if data.empty:
         raise ValueError(f"No requested tickers were found in local cache: {csv_path}")
     base_columns = ["date", "tic", *BASE_COLUMNS]
     optional_columns = [column for column in ["adjcp", "vix", "turbulence"] if column in data.columns]
-    return _keep_complete_trading_dates(data[base_columns + optional_columns], available_tickers)
+    # Alignment happens in drop_unusable_tickers after short/zero tickers are removed.
+    return data[base_columns + optional_columns].copy()
 
 
 def _load_local_pickle(pickle_path: Path, tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
@@ -481,9 +545,8 @@ def _load_local_pickle(pickle_path: Path, tickers: list[str], start_date: str, e
     data = data[data["tic"].isin(tickers)].copy()
     data = data[(data["date"] >= pd.Timestamp(start_date)) & (data["date"] <= pd.Timestamp(end_date))].copy()
     data = data.sort_values(by=["date", "tic"]).reset_index(drop=True)
-    available_tickers = sorted(data["tic"].unique().tolist())
-    if not available_tickers:
+    if data.empty:
         raise ValueError(f"No requested tickers were found in local pickle: {pickle_path}")
     base_columns = ["date", "tic", *BASE_COLUMNS]
     optional_columns = [column for column in ["adjcp", "vix", "turbulence"] if column in data.columns]
-    return _keep_complete_trading_dates(data[base_columns + optional_columns], available_tickers)
+    return data[base_columns + optional_columns].copy()

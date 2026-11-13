@@ -30,10 +30,11 @@ DOW30_TICKERS = [
     "CRM",
     "VZ",
     "V",
-    "WBA",
+    # WBA removed: delisted / Yahoo returns no quotes (fills as all-zero prices).
     "WMT",
     "DIS",
-    "DOW",
+    # DOW removed: IPO 2019-03-20; including it truncates a 2008+ panel to 2019
+    # (or injects pre-IPO zeros). drop_unusable_tickers also guards against this.
 ]
 
 DATASET_TICKERS = {

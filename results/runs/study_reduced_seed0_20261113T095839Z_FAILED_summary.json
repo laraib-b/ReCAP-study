@@ -1,0 +1,14 @@
+{
+  "run_id": "study_reduced_reduced_seed0_dow30_seed0_20261113T095839Z",
+  "git_commit": "b07f42eb22f4757883ca4fe0e45ddff2773cb5eb",
+  "status": "invalid_portfolio_metrics",
+  "minutes": 12.9,
+  "device": "cuda",
+  "diagnosis": "All variants show CR≈-1 / MDD≈1 because price data contained unusable tickers: WBA entirely zero (Yahoo delisted/not found) and DOW zero until IPO 2019-03-20. Micro avoided both by using only the first 8 tickers. Detector calibration itself looked healthy (budget_1/2 within tolerance).",
+  "calibration_ok": {
+    "budget_0.5": {"h": 64.0, "holdout_sim_alarms_per_year": 0.685, "within_tolerance": false, "hit_search_ceiling": true},
+    "budget_1": {"h": 27.93, "holdout_sim_alarms_per_year": 1.026, "within_tolerance": true},
+    "budget_2": {"h": 7.84, "holdout_sim_alarms_per_year": 2.126, "within_tolerance": true}
+  },
+  "portfolio_metrics_discard": "CR≈-1 for every variant including no_adapt; do not use for paper tables."
+}
