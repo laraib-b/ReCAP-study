@@ -69,13 +69,13 @@ def _():
     REPO_DIR = "/tmp/ReCAP-study"
     BRANCH = "study-sunday"
 
-    # One job for now: fuller profile, seed 0, to measure time + memory.
-    # After that succeeds, we can add seeds 1 and 2.
+    # Reduced seed 0 is done (usable). Next: seeds 1 and 2 (~13 min each on GPU).
     # Each item: (profile, seed, finetune_timesteps_or_None, tag)
     #   profile: "micro" (tiny) or "reduced" (fuller DOW30)
     #   finetune_timesteps_or_None: None = use the profile default
     JOBS = [
-        ("reduced", 0, None, "reduced_seed0"),
+        ("reduced", 1, None, "reduced_seed1"),
+        ("reduced", 2, None, "reduced_seed2"),
     ]
     return BRANCH, JOBS, REPO_DIR, REPO_URL
 

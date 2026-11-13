@@ -31,11 +31,35 @@ All of this used the **micro** profile: 8 tickers, 2019→2021, tiny PPO. Paper-
 3. **Giving adaptation more training helps the default a lot.** At 1024 steps, default finally beats “no adaptation” on average return (0.55 vs 0.48), though Sharpe is still a bit lower and noisy.
 4. **Micro is a pilot, not the paper claim.** 8 stocks + 1 test year + tiny PPO is too small to conclude. We need a fuller run.
 
+## Reduced DOW30 on molab (GPU)
+
+Protocol: paper ARD, sim-calibrated \(h\), causal eval. 28 tickers (WBA/DOW dropped). Dates 2008-05-01 → 2025-04-29. Commit `2dcdaae`.
+
+| Seed | Status | Notes |
+|---:|---|---|
+| 0 (bad run, CR≈−1) | **Discard** | WBA zeros / DOW IPO wipeout |
+| 0 (re-run `…T123541Z`) | **Done / usable** | Calibration OK for budgets 1 & 2; portfolio CR sane |
+| 1 | **Next** | ~13 min GPU |
+| 2 | **Next** | ~13 min GPU |
+
+### Seed 0 portfolio (causal)
+
+| Variant | CR | SR | MDD | test alarms/yr |
+|---|---:|---:|---:|---:|
+| no_adapt_default | **0.66** | **0.75** | 0.22 | 4.82 |
+| default_2.5 | 0.27 | 0.36 | 0.32 | 4.82 |
+| budget_0.5 | −0.12 | −0.06 | 0.38 | 2.21 |
+| budget_1 | −0.43 | −0.48 | 0.57 | 3.01 |
+| budget_2 | −0.12 | −0.03 | 0.44 | 3.01 |
+
+Calibration: budget_1 / budget_2 within tolerance; budget_0.5 hits search ceiling at \(h=64\sigma\) (holdout ≈0.69/yr vs target 0.5).
+
+Plain English so far (1 seed only): **no adaptation beats every adapt-on-alarm setting**; stricter false-alarm budgets do not help portfolio CR on this seed.
+
 ## What is still needed for the paper
 
-1. **Fuller profile on molab** (`reduced`). First seed-0 run finished in **12.9 min on GPU** but portfolio metrics were **invalid** (CR≈−1): Yahoo returned all-zero prices for delisted **WBA**, and **DOW** either zero-filled pre-IPO or truncated the panel to 2019. Fix: drop WBA/DOW from the study ticker list + `drop_unusable_tickers` (zeros and short histories) before date alignment. **Re-run reduced seed 0** on molab (~13 min GPU) after pulling this commit.
-2. If that re-run is healthy, seeds 1–2 on molab (~13 min each).
-3. Write-up: detector mismatch (repo vs paper), simulation calibration, portfolio tables, limitations.
+1. Reduced seeds **1–2** on molab (~13 min each GPU; leave tab open). Notebook `JOBS` already pointed at those seeds after this update.
+2. Aggregate 3-seed means + write-up (detector mismatch, sim calibration, portfolios, limitations).
 
 ## Hardware rules (for the human)
 
