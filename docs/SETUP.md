@@ -28,6 +28,19 @@ pip install pytest jupyter
 
 3. Data: either place FinRL-style caches under `datasets/` or allow yfinance download on first run.
 
+### Lighter venv for the study (`micro` profile, no FinRL)
+
+The study path does not import FinRL. A repo-local `.venv` (gitignored) is enough:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+.\.venv\Scripts\python.exe -m pip install "pandas==2.2.3" "gymnasium>=0.29" "stable-baselines3>=2.0" "yfinance>=0.2" "requests>=2.31" pytest
+.\.venv\Scripts\python.exe study/run_study.py --profile micro --dataset DOW30 --device cpu --seed 0 --disable-local-cache --no-adapt-control
+```
+
+On this 8 GB laptop one micro seed takes ~8.5 min and reproduces the molab seed-0 result (same calibrated `h`, portfolio metrics equal to ~4 decimals).
+
 ## Google Colab
 
 1. Download the **latest** `notebooks/first_run_colab.ipynb` from GitHub (Colab does not auto-update an already-open notebook when you push).
