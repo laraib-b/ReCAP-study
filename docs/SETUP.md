@@ -35,7 +35,7 @@ The study path does not import FinRL. A repo-local `.venv` (gitignored) is enoug
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-.\.venv\Scripts\python.exe -m pip install "pandas==2.2.3" "gymnasium>=0.29" "stable-baselines3>=2.0" "yfinance>=0.2" "requests>=2.31" pytest
+.\.venv\Scripts\python.exe -m pip install "pandas==2.2.3" "gymnasium>=0.29" "stable-baselines3>=2.0" "yfinance>=0.2" "requests>=2.31" pytest tabulate
 .\.venv\Scripts\python.exe study/run_study.py --profile micro --dataset DOW30 --device cpu --seed 0 --disable-local-cache --no-adapt-control
 ```
 
