@@ -81,6 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--null-cal-reps", type=int, default=100, help="No-change sims used to choose h")
     parser.add_argument("--null-holdout-reps", type=int, default=200, help="Held-out no-change sims for reporting")
     parser.add_argument("--null-horizon-days", type=int, default=1008, help="Post-reference days per simulation")
+    parser.add_argument("--tag", default="", help="Experiment label added to the output filename and JSON")
     return parser
 
 
@@ -257,7 +258,8 @@ def main() -> None:
     out_dir = ROOT / "outputs" / "study"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out_path = out_dir / f"study_{args.profile}_{args.dataset.lower()}_seed{args.seed}_{stamp}.json"
+    tag = f"_{args.tag}" if args.tag else ""
+    out_path = out_dir / f"study_{args.profile}{tag}_{args.dataset.lower()}_seed{args.seed}_{stamp}.json"
     daily_dir = out_dir / f"daily_{stamp}"
     daily_dir.mkdir(parents=True, exist_ok=True)
 
@@ -289,6 +291,7 @@ def main() -> None:
             "Thresholds frozen before test eval.",
         ],
         "ard_mode": args.ard_mode,
+        "tag": args.tag,
         "profile": args.profile,
         "dataset": args.dataset,
         "seed": args.seed,
