@@ -1,0 +1,1228 @@
+{
+  "mode": "false_alarm_calibrated_study",
+  "run_id": "study_micro_ft1024_dow30_seed0_20261113T090250Z",
+  "created_utc": "20261113T090250Z",
+  "git_commit": "38ee6851f79399df848fe4a63d99a9e1c1387f8d",
+  "argv": [
+    "--profile",
+    "micro",
+    "--dataset",
+    "DOW30",
+    "--device",
+    "cpu",
+    "--seed",
+    "0",
+    "--finetune-timesteps",
+    "1024",
+    "--tag",
+    "ft1024",
+    "--disable-local-cache",
+    "--no-adapt-control"
+  ],
+  "protocol_notes": [
+    "ARD mode: paper (see docs/DEVIATIONS.md).",
+    "Policy library fitted once with default h=2.5\u03c3 on train.",
+    "Threshold variants change test-time ARD h only; features, kappa, mu0 updates and resets unchanged.",
+    "h calibrated on no-change simulations (VAR(1) fitted to the train reference window); achieved rate reported on separate held-out simulations.",
+    "Historical (train/test) alarms are reported as alarms, not labelled false.",
+    "Causal eval disables max(baseline, adapted) look-ahead selection; in paper mode train is streamed through the detector before test.",
+    "Thresholds frozen before test eval."
+  ],
+  "ard_mode": "paper",
+  "tag": "ft1024",
+  "profile": "micro",
+  "dataset": "DOW30",
+  "seed": 0,
+  "device": "cpu",
+  "tickers": [
+    "AXP",
+    "AMGN",
+    "AAPL",
+    "BA",
+    "CAT",
+    "CSCO",
+    "CVX",
+    "GS"
+  ],
+  "dates": {
+    "start": "2019-01-01",
+    "train_end": "2020-06-01",
+    "test_end": "2021-06-01"
+  },
+  "warning": "Pilot-scale compute/profile may be below paper budgets. Do not claim paper Table 2 replication.",
+  "config": {
+    "initial_cash": 1000000.0,
+    "transaction_cost": 0.001,
+    "total_training_steps": null,
+    "pretrain_timesteps": 256,
+    "finetune_timesteps": 1024,
+    "max_library_size": 20,
+    "similarity_threshold": 0.5,
+    "min_segment_days": 20,
+    "cusum_threshold_scale": 2.5,
+    "ard_vote_threshold": 1,
+    "ard_mode": "paper",
+    "ard_initial_reference_days": 177,
+    "gate_epochs": 5,
+    "gate_target_temperature": 0.1,
+    "min_policy_vector_norm": 0.0001,
+    "min_new_vector_weight": 0.02,
+    "online_warmup_steps": 5,
+    "online_update_interval": 5,
+    "online_step_epochs": 3,
+    "online_gate_learning_rate": 0.0005,
+    "online_vector_learning_rate": 0.005,
+    "seed": 0,
+    "device": "cpu",
+    "batch_size": 32,
+    "n_steps": 64,
+    "learning_rate": 0.0001,
+    "gamma": 0.99,
+    "ent_coef": 0.01,
+    "clip_range": 0.2,
+    "n_epochs": 10,
+    "gae_lambda": 0.95,
+    "max_grad_norm": 0.5,
+    "vf_coef": 0.3695,
+    "gate_learning_rate": 0.001,
+    "trading_days_per_year": 252
+  },
+  "null_calibration": {
+    "null_model": {
+      "model": "VAR(1) with correlated Gaussian innovations",
+      "fit_window": "first 177 train days (detector initial reference window)",
+      "columns": [
+        "vix",
+        "turbulence",
+        "boll_ub",
+        "boll_lb",
+        "zd_5",
+        "rsi_30"
+      ],
+      "spectral_radius_raw": 0.9595688319007886,
+      "spectral_radius_used": 0.9595688319007886
+    },
+    "sim_days": 1185,
+    "sim_reference_days": 177,
+    "calibration_reps": 100,
+    "holdout_reps": 200,
+    "calibration_seed": 10000,
+    "holdout_seed": 20000,
+    "default_2.5": {
+      "threshold_scale": 2.5,
+      "holdout_sim_alarms_per_year": 5.1325,
+      "holdout_sim_alarms": 4106,
+      "holdout_sim_years": 800.0,
+      "holdout_sim_rate_ci95": [
+        4.976695734780489,
+        5.291941317658362
+      ]
+    }
+  },
+  "calibrations": {
+    "budget_0.5": {
+      "target_alarms_per_year": 0.5,
+      "threshold_scale": 57.869702732757645,
+      "calibration_sim_alarms_per_year": 0.5,
+      "holdout_sim_alarms_per_year": 0.555,
+      "holdout_sim_alarms": 444,
+      "holdout_sim_years": 800.0,
+      "holdout_sim_rate_ci95": [
+        0.504568291931195,
+        0.6091072297931905
+      ],
+      "within_tolerance": true,
+      "tolerance": 0.25,
+      "hit_search_ceiling": false,
+      "skipped_eval_duplicate_scale": false
+    },
+    "budget_1": {
+      "target_alarms_per_year": 1.0,
+      "threshold_scale": 24.82615722076615,
+      "calibration_sim_alarms_per_year": 0.995,
+      "holdout_sim_alarms_per_year": 1.02125,
+      "holdout_sim_alarms": 817,
+      "holdout_sim_years": 800.0,
+      "holdout_sim_rate_ci95": [
+        0.9524118207251127,
+        1.09374870582719
+      ],
+      "within_tolerance": true,
+      "tolerance": 0.25,
+      "hit_search_ceiling": false,
+      "skipped_eval_duplicate_scale": false
+    },
+    "budget_2": {
+      "target_alarms_per_year": 2.0,
+      "threshold_scale": 8.483118568239405,
+      "calibration_sim_alarms_per_year": 1.9975,
+      "holdout_sim_alarms_per_year": 2.0375,
+      "holdout_sim_alarms": 1630,
+      "holdout_sim_years": 800.0,
+      "holdout_sim_rate_ci95": [
+        1.939774286666183,
+        2.1388738906649123
+      ],
+      "within_tolerance": true,
+      "tolerance": 0.25,
+      "hit_search_ceiling": false,
+      "skipped_eval_duplicate_scale": false
+    }
+  },
+  "historical_train_alarms": {
+    "default_2.5": {
+      "threshold_scale": 2.5,
+      "n_alarms": 4,
+      "alarms_per_year": 2.8394366197183096,
+      "alarm_dates": [
+        "2019-09-20",
+        "2019-11-13",
+        "2020-01-31",
+        "2020-03-03"
+      ]
+    },
+    "budget_0.5": {
+      "threshold_scale": 57.869702732757645,
+      "n_alarms": 2,
+      "alarms_per_year": 1.4197183098591548,
+      "alarm_dates": [
+        "2019-12-13",
+        "2020-03-06"
+      ]
+    },
+    "budget_1": {
+      "threshold_scale": 24.82615722076615,
+      "n_alarms": 3,
+      "alarms_per_year": 2.129577464788732,
+      "alarm_dates": [
+        "2019-11-12",
+        "2020-02-28",
+        "2020-03-30"
+      ]
+    },
+    "budget_2": {
+      "threshold_scale": 8.483118568239405,
+      "n_alarms": 4,
+      "alarms_per_year": 2.8394366197183096,
+      "alarm_dates": [
+        "2019-10-02",
+        "2019-11-21",
+        "2020-02-26",
+        "2020-03-26"
+      ]
+    }
+  },
+  "results": {
+    "default_2.5": {
+      "protocol": "causal_no_lookahead_selection",
+      "adapt_on_alarm": true,
+      "online_update": true,
+      "metrics": {
+        "CR": 0.500390300539554,
+        "SR": 1.533865239465737,
+        "MDD": 0.1844440277315987
+      },
+      "library_size": 9,
+      "n_test_segments": 9,
+      "n_adaptation_events": 9,
+      "adaptations_per_year": 9.035856573705178,
+      "turnover_proxy": 37.76551175117493,
+      "transaction_cost_proxy": 0.03776551175117493,
+      "detector": {
+        "mode": "paper",
+        "threshold_scale": 2.5,
+        "n_alarms": 8,
+        "alarms_per_year": 8.0,
+        "alarm_dates": [
+          "2020-07-16",
+          "2020-10-01",
+          "2020-11-05",
+          "2020-12-15",
+          "2021-01-15",
+          "2021-02-25",
+          "2021-04-01",
+          "2021-05-18"
+        ]
+      },
+      "adaptation_events": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2020-07-15",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.5852634906768799,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2020-07-16",
+          "end_date": "2020-09-30",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.14733076095581055,
+          "library_size_after": 5
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2020-10-01",
+          "end_date": "2020-11-04",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.6476752758026123,
+          "library_size_after": 6
+        },
+        {
+          "segment_index": 3,
+          "start_date": "2020-11-05",
+          "end_date": "2020-12-14",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.03557679429650307,
+          "library_size_after": 7
+        },
+        {
+          "segment_index": 4,
+          "start_date": "2020-12-15",
+          "end_date": "2021-01-14",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.37441325187683105,
+          "library_size_after": 8
+        },
+        {
+          "segment_index": 5,
+          "start_date": "2021-01-15",
+          "end_date": "2021-02-24",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.02652600407600403,
+          "library_size_after": 9
+        },
+        {
+          "segment_index": 6,
+          "start_date": "2021-02-25",
+          "end_date": "2021-03-31",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0008654175326228142,
+          "library_size_after": 9
+        },
+        {
+          "segment_index": 7,
+          "start_date": "2021-04-01",
+          "end_date": "2021-05-17",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0007726970943622291,
+          "library_size_after": 9
+        },
+        {
+          "segment_index": 8,
+          "start_date": "2021-05-18",
+          "end_date": "2021-05-28",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0024854454677551985,
+          "library_size_after": 9
+        }
+      ],
+      "segment_summaries": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2020-07-15",
+          "mean_weights": [
+            0.03822401911020279,
+            0.3055565655231476,
+            0.07095595449209213,
+            0.5852634906768799
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.5852634906768799,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2020-07-16",
+          "end_date": "2020-09-30",
+          "mean_weights": [
+            0.018314501270651817,
+            0.7935289144515991,
+            0.03240639716386795,
+            0.00841938704252243,
+            0.14733076095581055
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.14733076095581055,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2020-10-01",
+          "end_date": "2020-11-04",
+          "mean_weights": [
+            0.04647083953022957,
+            0.20712155103683472,
+            0.07262474298477173,
+            0.025064200162887573,
+            0.0010433607967570424,
+            0.6476752758026123
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.6476752758026123,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 3,
+          "start_date": "2020-11-05",
+          "end_date": "2020-12-14",
+          "mean_weights": [
+            0.005485330242663622,
+            0.04327148571610451,
+            0.07702161371707916,
+            0.8384802341461182,
+            1.617738053028006e-05,
+            0.00014840073708910495,
+            0.03557679429650307
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.03557679429650307,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 4,
+          "start_date": "2020-12-15",
+          "end_date": "2021-01-14",
+          "mean_weights": [
+            0.05829848721623421,
+            0.3625296354293823,
+            0.15355202555656433,
+            0.04016513377428055,
+            5.35405233677011e-05,
+            1.9582887034630403e-05,
+            0.010968288406729698,
+            0.37441325187683105
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.37441325187683105,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 5,
+          "start_date": "2021-01-15",
+          "end_date": "2021-02-24",
+          "mean_weights": [
+            0.010364039801061153,
+            0.05363903567194939,
+            0.039245035499334335,
+            0.37943726778030396,
+            6.631320047745248e-06,
+            9.334247806691565e-06,
+            0.02318860962986946,
+            0.4675840139389038,
+            0.02652600407600403
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.02652600407600403,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 6,
+          "start_date": "2021-02-25",
+          "end_date": "2021-03-31",
+          "mean_weights": [
+            0.023826442658901215,
+            0.008023823611438274,
+            0.07101153582334518,
+            0.4051055908203125,
+            6.80385925377891e-09,
+            7.49465343119482e-08,
+            0.4701567590236664,
+            0.018971076235175133,
+            0.002039264887571335,
+            0.0008654175326228142
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0008654175326228142,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 7,
+          "start_date": "2021-04-01",
+          "end_date": "2021-05-17",
+          "mean_weights": [
+            0.019245024770498276,
+            0.011510943062603474,
+            0.07450194656848907,
+            0.07681258767843246,
+            2.5563375416481904e-08,
+            2.4270361720368783e-08,
+            0.024759404361248016,
+            0.7883929014205933,
+            0.004004546441137791,
+            0.0007726970943622291
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0007726970943622291,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 8,
+          "start_date": "2021-05-18",
+          "end_date": "2021-05-28",
+          "mean_weights": [
+            0.0628737136721611,
+            0.037215378135442734,
+            0.29720330238342285,
+            0.3494318425655365,
+            2.7051983764181387e-08,
+            4.946691234408718e-08,
+            0.15009590983390808,
+            0.09532581269741058,
+            0.005368462763726711,
+            0.002485445700585842
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0024854454677551985,
+          "promoted_current_vector": false
+        }
+      ],
+      "daily_path": "outputs/study/daily_20261113T090250Z/default_2.5.json"
+    },
+    "budget_0.5": {
+      "protocol": "causal_no_lookahead_selection",
+      "adapt_on_alarm": true,
+      "online_update": true,
+      "metrics": {
+        "CR": 0.44291433361622845,
+        "SR": 1.1427310218642928,
+        "MDD": 0.21409266284439277
+      },
+      "library_size": 4,
+      "n_test_segments": 3,
+      "n_adaptation_events": 3,
+      "adaptations_per_year": 3.0119521912350598,
+      "turnover_proxy": 7.76939582824707,
+      "transaction_cost_proxy": 0.00776939582824707,
+      "detector": {
+        "mode": "paper",
+        "threshold_scale": 57.869702732757645,
+        "n_alarms": 2,
+        "alarms_per_year": 2.0,
+        "alarm_dates": [
+          "2021-03-11",
+          "2021-04-13"
+        ]
+      },
+      "adaptation_events": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2021-03-10",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.9340607523918152,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2021-03-11",
+          "end_date": "2021-04-12",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.004786591976881027,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2021-04-13",
+          "end_date": "2021-05-28",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0014383576344698668,
+          "library_size_after": 4
+        }
+      ],
+      "segment_summaries": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2021-03-10",
+          "mean_weights": [
+            0.006078263279050589,
+            0.04857632517814636,
+            0.011284629814326763,
+            0.9340607523918152
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.9340607523918152,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2021-03-11",
+          "end_date": "2021-04-12",
+          "mean_weights": [
+            0.007781447377055883,
+            0.7640368342399597,
+            0.028328601270914078,
+            0.19506652653217316,
+            0.004786591976881027
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.004786591976881027,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2021-04-13",
+          "end_date": "2021-05-28",
+          "mean_weights": [
+            0.004322870634496212,
+            0.8932633996009827,
+            0.0061328294686973095,
+            0.09484278410673141,
+            0.001438357401639223
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0014383576344698668,
+          "promoted_current_vector": false
+        }
+      ],
+      "daily_path": "outputs/study/daily_20261113T090250Z/budget_0.5.json"
+    },
+    "budget_1": {
+      "protocol": "causal_no_lookahead_selection",
+      "adapt_on_alarm": true,
+      "online_update": true,
+      "metrics": {
+        "CR": 0.4618956730385928,
+        "SR": 1.150428790855728,
+        "MDD": 0.22142364919782784
+      },
+      "library_size": 4,
+      "n_test_segments": 3,
+      "n_adaptation_events": 3,
+      "adaptations_per_year": 3.0119521912350598,
+      "turnover_proxy": 5.693931758403778,
+      "transaction_cost_proxy": 0.005693931758403778,
+      "detector": {
+        "mode": "paper",
+        "threshold_scale": 24.82615722076615,
+        "n_alarms": 2,
+        "alarms_per_year": 2.0,
+        "alarm_dates": [
+          "2021-02-11",
+          "2021-03-29"
+        ]
+      },
+      "adaptation_events": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2021-02-10",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.9269422888755798,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2021-02-11",
+          "end_date": "2021-03-26",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0014580448623746634,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2021-03-29",
+          "end_date": "2021-05-28",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.0019596281927078962,
+          "library_size_after": 4
+        }
+      ],
+      "segment_summaries": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2021-02-10",
+          "mean_weights": [
+            0.006734439637511969,
+            0.05382036045193672,
+            0.012502850033342838,
+            0.9269422888755798
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.9269422888755798,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2021-02-11",
+          "end_date": "2021-03-26",
+          "mean_weights": [
+            0.002677313517779112,
+            0.04174703359603882,
+            0.0030178038869053125,
+            0.9510997533798218,
+            0.0014580448623746634
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0014580448623746634,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2021-03-29",
+          "end_date": "2021-05-28",
+          "mean_weights": [
+            0.0025551237631589174,
+            0.0529288686811924,
+            0.002544575370848179,
+            0.9400118589401245,
+            0.0019596281927078962
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.0019596281927078962,
+          "promoted_current_vector": false
+        }
+      ],
+      "daily_path": "outputs/study/daily_20261113T090250Z/budget_1.json"
+    },
+    "budget_2": {
+      "protocol": "causal_no_lookahead_selection",
+      "adapt_on_alarm": true,
+      "online_update": true,
+      "metrics": {
+        "CR": 0.13012647733316873,
+        "SR": 0.5423138081120679,
+        "MDD": 0.19721346455127098
+      },
+      "library_size": 8,
+      "n_test_segments": 8,
+      "n_adaptation_events": 8,
+      "adaptations_per_year": 8.03187250996016,
+      "turnover_proxy": 32.52953791618347,
+      "transaction_cost_proxy": 0.032529537916183474,
+      "detector": {
+        "mode": "paper",
+        "threshold_scale": 8.483118568239405,
+        "n_alarms": 7,
+        "alarms_per_year": 7.0,
+        "alarm_dates": [
+          "2020-08-12",
+          "2020-10-12",
+          "2020-11-11",
+          "2021-01-20",
+          "2021-03-05",
+          "2021-04-28",
+          "2021-05-27"
+        ]
+      },
+      "adaptation_events": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2020-08-11",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.7428442239761353,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2020-08-12",
+          "end_date": "2020-10-09",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.009883931837975979,
+          "library_size_after": 4
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2020-10-12",
+          "end_date": "2020-11-10",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.060099925845861435,
+          "library_size_after": 5
+        },
+        {
+          "segment_index": 3,
+          "start_date": "2020-11-11",
+          "end_date": "2021-01-19",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.016779836267232895,
+          "library_size_after": 5
+        },
+        {
+          "segment_index": 4,
+          "start_date": "2021-01-20",
+          "end_date": "2021-03-04",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.04823881387710571,
+          "library_size_after": 6
+        },
+        {
+          "segment_index": 5,
+          "start_date": "2021-03-05",
+          "end_date": "2021-04-27",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.025987323373556137,
+          "library_size_after": 7
+        },
+        {
+          "segment_index": 6,
+          "start_date": "2021-04-28",
+          "end_date": "2021-05-26",
+          "adapted": true,
+          "promoted_current_vector": true,
+          "mean_new_weight": 0.3548364043235779,
+          "library_size_after": 8
+        },
+        {
+          "segment_index": 7,
+          "start_date": "2021-05-27",
+          "end_date": "2021-05-28",
+          "adapted": true,
+          "promoted_current_vector": false,
+          "mean_new_weight": 0.11531675606966019,
+          "library_size_after": 8
+        }
+      ],
+      "segment_summaries": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2020-08-11",
+          "mean_weights": [
+            0.02370372787117958,
+            0.18944767117500305,
+            0.044004496186971664,
+            0.7428442239761353
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.7428442239761353,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2020-08-12",
+          "end_date": "2020-10-09",
+          "mean_weights": [
+            0.06816372275352478,
+            0.060799792408943176,
+            0.15349574387073517,
+            0.7076568603515625,
+            0.009883930906653404
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.009883931837975979,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2020-10-12",
+          "end_date": "2020-11-10",
+          "mean_weights": [
+            0.16781401634216309,
+            0.2660749852657318,
+            0.2114635407924652,
+            0.29454749822616577,
+            0.06009992957115173
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.060099925845861435,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 3,
+          "start_date": "2020-11-11",
+          "end_date": "2021-01-19",
+          "mean_weights": [
+            0.006843938492238522,
+            0.030387958511710167,
+            0.03161816671490669,
+            0.9143657088279724,
+            4.49616345576942e-06,
+            0.016779836267232895
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.016779836267232895,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 4,
+          "start_date": "2021-01-20",
+          "end_date": "2021-03-04",
+          "mean_weights": [
+            0.008789177052676678,
+            0.07658950239419937,
+            0.15955118834972382,
+            0.7068246006965637,
+            6.647370355494786e-06,
+            0.04823882132768631
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.04823881387710571,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 5,
+          "start_date": "2021-03-05",
+          "end_date": "2021-04-27",
+          "mean_weights": [
+            0.0016935389721766114,
+            0.0489988774061203,
+            0.029377393424510956,
+            0.8939228057861328,
+            1.0593453225737903e-06,
+            1.9070554117206484e-05,
+            0.025987328961491585
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.025987323373556137,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 6,
+          "start_date": "2021-04-28",
+          "end_date": "2021-05-26",
+          "mean_weights": [
+            0.029099861159920692,
+            0.4935320317745209,
+            0.09731099754571915,
+            0.009857933036983013,
+            4.592336154018994e-06,
+            1.5923127421046956e-06,
+            0.015356580726802349,
+            0.3548364043235779
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.3548364043235779,
+          "promoted_current_vector": true
+        },
+        {
+          "segment_index": 7,
+          "start_date": "2021-05-27",
+          "end_date": "2021-05-28",
+          "mean_weights": [
+            0.027756119146943092,
+            0.4940813481807709,
+            0.10852605849504471,
+            0.06428142637014389,
+            3.991094672528561e-06,
+            5.601737029792275e-06,
+            0.05124352499842644,
+            0.1387852430343628,
+            0.11531675606966019
+          ],
+          "used_current_vector": true,
+          "mean_new_weight": 0.11531675606966019,
+          "promoted_current_vector": false
+        }
+      ],
+      "daily_path": "outputs/study/daily_20261113T090250Z/budget_2.json"
+    },
+    "no_adapt_default": {
+      "protocol": "causal_no_lookahead_selection",
+      "adapt_on_alarm": false,
+      "online_update": false,
+      "metrics": {
+        "CR": 0.46305664086290266,
+        "SR": 1.9754119771178769,
+        "MDD": 0.11336455213330247
+      },
+      "library_size": 3,
+      "n_test_segments": 9,
+      "n_adaptation_events": 0,
+      "adaptations_per_year": 0.0,
+      "turnover_proxy": 52.37908589839935,
+      "transaction_cost_proxy": 0.052379085898399354,
+      "detector": {
+        "mode": "paper",
+        "threshold_scale": 2.5,
+        "n_alarms": 8,
+        "alarms_per_year": 8.0,
+        "alarm_dates": [
+          "2020-07-16",
+          "2020-10-01",
+          "2020-11-05",
+          "2020-12-15",
+          "2021-01-15",
+          "2021-02-25",
+          "2021-04-01",
+          "2021-05-18"
+        ]
+      },
+      "adaptation_events": [],
+      "segment_summaries": [
+        {
+          "segment_index": 0,
+          "start_date": "2020-06-01",
+          "end_date": "2020-07-15",
+          "mean_weights": [
+            0.20743760466575623,
+            0.34957045316696167,
+            0.4429919123649597
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 1,
+          "start_date": "2020-07-16",
+          "end_date": "2020-09-30",
+          "mean_weights": [
+            0.15300439298152924,
+            0.4118974506855011,
+            0.4350982904434204
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 2,
+          "start_date": "2020-10-01",
+          "end_date": "2020-11-04",
+          "mean_weights": [
+            0.17216812074184418,
+            0.38043543696403503,
+            0.4473964273929596
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 3,
+          "start_date": "2020-11-05",
+          "end_date": "2020-12-14",
+          "mean_weights": [
+            0.1527237445116043,
+            0.45117050409317017,
+            0.3961057960987091
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 4,
+          "start_date": "2020-12-15",
+          "end_date": "2021-01-14",
+          "mean_weights": [
+            0.12784530222415924,
+            0.49832701683044434,
+            0.3738277554512024
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 5,
+          "start_date": "2021-01-15",
+          "end_date": "2021-02-24",
+          "mean_weights": [
+            0.1031346470117569,
+            0.5140814781188965,
+            0.3827838897705078
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 6,
+          "start_date": "2021-02-25",
+          "end_date": "2021-03-31",
+          "mean_weights": [
+            0.08600360155105591,
+            0.6001556515693665,
+            0.31384074687957764
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 7,
+          "start_date": "2021-04-01",
+          "end_date": "2021-05-17",
+          "mean_weights": [
+            0.06060076132416725,
+            0.6634682416915894,
+            0.2759309411048889
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        },
+        {
+          "segment_index": 8,
+          "start_date": "2021-05-18",
+          "end_date": "2021-05-28",
+          "mean_weights": [
+            0.054814841598272324,
+            0.7122484445571899,
+            0.23293673992156982
+          ],
+          "used_current_vector": false,
+          "mean_new_weight": 0.0,
+          "promoted_current_vector": false
+        }
+      ],
+      "daily_path": "outputs/study/daily_20261113T090250Z/no_adapt_default.json"
+    }
+  },
+  "synthetic_diagnostic": {
+    "mode": "synthetic_shift_diagnostic",
+    "warning": "Injected-shift metrics are detector diagnostics only, not market performance.",
+    "base_process": "held-out no-change VAR(1) simulations",
+    "shift_day": 429,
+    "detection_window": 60,
+    "n_reps": 50,
+    "seed": 30000,
+    "results": [
+      {
+        "label": "default_2.5",
+        "threshold_scale": 2.5,
+        "shift_sigma": 1.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 3.5,
+        "pre_shift_false_alarms_per_year": 6.28
+      },
+      {
+        "label": "budget_0.5",
+        "threshold_scale": 57.869702732757645,
+        "shift_sigma": 1.0,
+        "detection_rate": 0.76,
+        "median_delay_days": 36.5,
+        "pre_shift_false_alarms_per_year": 0.78
+      },
+      {
+        "label": "budget_1",
+        "threshold_scale": 24.82615722076615,
+        "shift_sigma": 1.0,
+        "detection_rate": 0.98,
+        "median_delay_days": 23.0,
+        "pre_shift_false_alarms_per_year": 1.86
+      },
+      {
+        "label": "budget_2",
+        "threshold_scale": 8.483118568239405,
+        "shift_sigma": 1.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 8.5,
+        "pre_shift_false_alarms_per_year": 3.62
+      },
+      {
+        "label": "default_2.5",
+        "threshold_scale": 2.5,
+        "shift_sigma": 2.0,
+        "detection_rate": 0.98,
+        "median_delay_days": 2.0,
+        "pre_shift_false_alarms_per_year": 6.28
+      },
+      {
+        "label": "budget_0.5",
+        "threshold_scale": 57.869702732757645,
+        "shift_sigma": 2.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 20.0,
+        "pre_shift_false_alarms_per_year": 0.78
+      },
+      {
+        "label": "budget_1",
+        "threshold_scale": 24.82615722076615,
+        "shift_sigma": 2.0,
+        "detection_rate": 0.98,
+        "median_delay_days": 10.0,
+        "pre_shift_false_alarms_per_year": 1.86
+      },
+      {
+        "label": "budget_2",
+        "threshold_scale": 8.483118568239405,
+        "shift_sigma": 2.0,
+        "detection_rate": 0.96,
+        "median_delay_days": 3.0,
+        "pre_shift_false_alarms_per_year": 3.62
+      },
+      {
+        "label": "default_2.5",
+        "threshold_scale": 2.5,
+        "shift_sigma": 3.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 1.0,
+        "pre_shift_false_alarms_per_year": 6.28
+      },
+      {
+        "label": "budget_0.5",
+        "threshold_scale": 57.869702732757645,
+        "shift_sigma": 3.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 13.5,
+        "pre_shift_false_alarms_per_year": 0.78
+      },
+      {
+        "label": "budget_1",
+        "threshold_scale": 24.82615722076615,
+        "shift_sigma": 3.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 6.0,
+        "pre_shift_false_alarms_per_year": 1.86
+      },
+      {
+        "label": "budget_2",
+        "threshold_scale": 8.483118568239405,
+        "shift_sigma": 3.0,
+        "detection_rate": 1.0,
+        "median_delay_days": 2.0,
+        "pre_shift_false_alarms_per_year": 3.62
+      },
+      {
+        "label": "default_2.5",
+        "threshold_scale": 2.5,
+        "shift_sigma": -2.0,
+        "detection_rate": 0.16,
+        "median_delay_days": 39.5,
+        "pre_shift_false_alarms_per_year": 6.28
+      },
+      {
+        "label": "budget_0.5",
+        "threshold_scale": 57.869702732757645,
+        "shift_sigma": -2.0,
+        "detection_rate": 0.02,
+        "median_delay_days": 2.0,
+        "pre_shift_false_alarms_per_year": 0.78
+      },
+      {
+        "label": "budget_1",
+        "threshold_scale": 24.82615722076615,
+        "shift_sigma": -2.0,
+        "detection_rate": 0.02,
+        "median_delay_days": 47.0,
+        "pre_shift_false_alarms_per_year": 1.86
+      },
+      {
+        "label": "budget_2",
+        "threshold_scale": 8.483118568239405,
+        "shift_sigma": -2.0,
+        "detection_rate": 0.04,
+        "median_delay_days": 40.0,
+        "pre_shift_false_alarms_per_year": 3.62
+      }
+    ]
+  }
+}
