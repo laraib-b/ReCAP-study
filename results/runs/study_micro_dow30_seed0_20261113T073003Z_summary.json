@@ -1,0 +1,41 @@
+{
+  "run_id": "study_micro_dow30_seed0_20261113T073003Z",
+  "git_commit": "86508e5d0ee692e113ffa307190d27ff46d89faa",
+  "ard_mode": "paper",
+  "profile": "micro",
+  "dataset": "DOW30",
+  "seed": 0,
+  "null_calibration": {
+    "null_model": {"model": "VAR(1) with correlated Gaussian innovations", "fit_window": "first 177 train days", "spectral_radius_raw": 0.959568812032495, "spectral_radius_used": 0.959568812032495},
+    "sim_days": 1185, "sim_reference_days": 177, "calibration_reps": 100, "holdout_reps": 200, "calibration_seed": 10000, "holdout_seed": 20000,
+    "default_2.5": {"threshold_scale": 2.5, "holdout_sim_alarms_per_year": 5.1325, "holdout_sim_rate_ci95": [4.976695734780489, 5.291941317658362]}
+  },
+  "calibrations": {
+    "budget_0.5": {"threshold_scale": 57.869702732757645, "holdout_sim_alarms_per_year": 0.555, "holdout_sim_rate_ci95": [0.504568291931195, 0.6091072297931905], "within_tolerance": true},
+    "budget_1": {"threshold_scale": 24.82615722076615, "holdout_sim_alarms_per_year": 1.02125, "holdout_sim_rate_ci95": [0.9524118207251127, 1.09374870582719], "within_tolerance": true},
+    "budget_2": {"threshold_scale": 8.483118568239405, "holdout_sim_alarms_per_year": 2.0375, "holdout_sim_rate_ci95": [1.939774286666183, 2.1388738906649123], "within_tolerance": true}
+  },
+  "historical_train_alarms": {
+    "default_2.5": {"alarms_per_year": 2.8394366197183096, "alarm_dates": ["2019-09-20", "2019-11-13", "2020-01-31", "2020-03-03"]},
+    "budget_0.5": {"alarms_per_year": 1.4197183098591548, "alarm_dates": ["2019-12-13", "2020-03-06"]},
+    "budget_1": {"alarms_per_year": 2.129577464788732, "alarm_dates": ["2019-11-12", "2020-02-28", "2020-03-30"]},
+    "budget_2": {"alarms_per_year": 2.8394366197183096, "alarm_dates": ["2019-10-02", "2019-11-21", "2020-02-26", "2020-03-26"]}
+  },
+  "metrics": {
+    "default_2.5": {"CR": -0.12104062346326516, "SR": -0.2826249709763012, "MDD": 0.2682008003628236, "test_alarms_per_year": 8.0, "adaptations_per_year": 9.035856573705178},
+    "budget_0.5": {"CR": 0.4307722688040456, "SR": 1.1212276099527596, "MDD": 0.2151368624360643, "test_alarms_per_year": 2.0, "adaptations_per_year": 3.0119521912350598},
+    "budget_1": {"CR": 0.36217929531978044, "SR": 1.0023656561523857, "MDD": 0.2151368624360643, "test_alarms_per_year": 2.0, "adaptations_per_year": 3.0119521912350598},
+    "budget_2": {"CR": -0.26858918081666483, "SR": -0.8944036689249258, "MDD": 0.37294889974572404, "test_alarms_per_year": 7.0, "adaptations_per_year": 8.03187250996016},
+    "no_adapt_default": {"CR": 0.4755619225209291, "SR": 2.0109016203864654, "MDD": 0.10948645437573817, "test_alarms_per_year": 8.0, "adaptations_per_year": 0.0}
+  },
+  "synthetic_diagnostic": {
+    "shift_day": 429, "detection_window": 60, "n_reps": 50, "seed": 30000,
+    "columns": ["label", "threshold_scale", "shift_sigma", "detection_rate", "median_delay_days", "pre_shift_false_alarms_per_year"],
+    "rows": [
+      ["default_2.5", 2.5, 1.0, 1.0, 3.5, 6.28], ["budget_0.5", 57.8697, 1.0, 0.76, 36.5, 0.78], ["budget_1", 24.8262, 1.0, 0.98, 23.0, 1.86], ["budget_2", 8.4831, 1.0, 1.0, 8.5, 3.62],
+      ["default_2.5", 2.5, 2.0, 0.98, 2.0, 6.28], ["budget_0.5", 57.8697, 2.0, 1.0, 20.0, 0.78], ["budget_1", 24.8262, 2.0, 0.98, 10.0, 1.86], ["budget_2", 8.4831, 2.0, 0.96, 3.0, 3.62],
+      ["default_2.5", 2.5, 3.0, 1.0, 1.0, 6.28], ["budget_0.5", 57.8697, 3.0, 1.0, 13.5, 0.78], ["budget_1", 24.8262, 3.0, 1.0, 6.0, 1.86], ["budget_2", 8.4831, 3.0, 1.0, 2.0, 3.62],
+      ["default_2.5", 2.5, -2.0, 0.16, 39.5, 6.28], ["budget_0.5", 57.8697, -2.0, 0.02, 2.0, 0.78], ["budget_1", 24.8262, -2.0, 0.02, 47.0, 1.86], ["budget_2", 8.4831, -2.0, 0.04, 40.0, 3.62]
+    ]
+  }
+}
