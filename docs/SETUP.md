@@ -1,4 +1,4 @@
-# Setup and first-run guide
+﻿# Setup and first-run guide
 
 ## Recommendation on this hardware
 
@@ -35,7 +35,7 @@ The study path does not import FinRL. A repo-local `.venv` (gitignored) is enoug
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-.\.venv\Scripts\python.exe -m pip install "pandas==2.2.3" "gymnasium>=0.29" "stable-baselines3>=2.0" "yfinance>=0.2" "requests>=2.31" pytest
+.\.venv\Scripts\python.exe -m pip install "pandas==2.2.3" "gymnasium>=0.29" "stable-baselines3>=2.0" "yfinance>=0.2" "requests>=2.31" pytest tabulate
 .\.venv\Scripts\python.exe study/run_study.py --profile micro --dataset DOW30 --device cpu --seed 0 --disable-local-cache --no-adapt-control
 ```
 
@@ -44,7 +44,7 @@ On this 8 GB laptop one micro seed takes ~8.5 min and reproduces the molab seed-
 ## Google Colab
 
 1. Download the **latest** `notebooks/first_run_colab.ipynb` from GitHub (Colab does not auto-update an already-open notebook when you push).
-2. Upload/open it in Colab → **Connect** → **Run all**.
+2. Upload/open it in Colab â†’ **Connect** â†’ **Run all**.
 3. Section 3 = synthetic smoke. Section 4 = reduced DOW30 pilot (slower, not paper-scale).
 4. Repo URL in the notebook should be `https://github.com/laraib-b/ReCAP-study.git`.
 
@@ -57,7 +57,7 @@ python study/reduced_pilot.py --dataset DOW30 --disable-local-cache
 
 ## molab (recommended over free Colab for this project)
 
-[molab](https://docs.marimo.io/guides/molab/) is marimo’s free hosted notebook cloud (~**4 CPU / 32 GB RAM**, optional GPU, up to 12h sessions). That RAM headroom is much better for ReCAP than free Colab.
+[molab](https://docs.marimo.io/guides/molab/) is marimoâ€™s free hosted notebook cloud (~**4 CPU / 32 GB RAM**, optional GPU, up to 12h sessions). That RAM headroom is much better for ReCAP than free Colab.
 
 1. Open [https://molab.new](https://molab.new) (or [https://molab.marimo.io](https://molab.marimo.io)).
 2. Upload `notebooks/study_run_molab.py` (marimo format, not `.ipynb`).
@@ -65,7 +65,7 @@ python study/reduced_pilot.py --dataset DOW30 --disable-local-cache
 4. Run all cells. It clones branch `study-sunday` and runs `study/run_study.py --profile micro`.
 5. Download `outputs/study/*.json` from the file sidebar.
 
-Note: molab uses **marimo** notebooks (`.py`), not Jupyter. Do **not** use the WebAssembly playground for this ML workload — use a full molab server notebook.
+Note: molab uses **marimo** notebooks (`.py`), not Jupyter. Do **not** use the WebAssembly playground for this ML workload â€” use a full molab server notebook.
 
 ## Portability checklist
 
