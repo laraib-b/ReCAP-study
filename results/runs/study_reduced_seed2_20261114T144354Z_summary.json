@@ -1,0 +1,20 @@
+{
+  "run_id": "study_reduced_reduced_seed2_dow30_seed2_20261114T144354Z",
+  "git_commit": "89d11cf7c1a22292b91f8f86e5bf28e18b01285d",
+  "status": "usable",
+  "device": "cpu",
+  "tickers_n": 28,
+  "calibration": {
+    "budget_0.5": {"h": 64.0, "holdout_sim_alarms_per_year": 0.615, "within_tolerance": true, "hit_search_ceiling": true},
+    "budget_1": {"h": 27.78, "holdout_sim_alarms_per_year": 0.999, "within_tolerance": true},
+    "budget_2": {"h": 7.51, "holdout_sim_alarms_per_year": 2.049, "within_tolerance": true}
+  },
+  "portfolio_CR": {
+    "no_adapt_default": 0.638,
+    "default_2.5": -0.266,
+    "budget_0.5": -0.436,
+    "budget_1": -0.288,
+    "budget_2": -0.283
+  },
+  "takeaway": "Same pattern as seeds 0-1: no-adapt ~0.64 CR; all adapt-on-alarm variants negative on this seed."
+}

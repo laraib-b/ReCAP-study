@@ -1,4 +1,4 @@
-# Where the study stands (2026-11-13)
+# Where the study stands (2026-11-14)
 
 ## One-sentence goal
 
@@ -24,48 +24,46 @@ All of this used the **micro** profile: 8 tickers, 2019→2021, tiny PPO. Paper-
 | budget 2 | 0.12 | 0.11 | 0.09 |
 | no adaptation | **0.48** | **0.48** | 0.48 |
 
-### What this means in plain English
+## Reduced DOW30 on molab — **3 seeds done**
 
-1. **Calibration works.** We can set \(h\) so that on “nothing changed” simulations the detector fires about 0.5 / 1 / 2 times per year. That part of the paper story is solid.
-2. **Fewer alarms ≠ better on this tiny setup.** The strictest budgets did not clearly beat the default.
-3. **Giving adaptation more training helps the default a lot.** At 1024 steps, default finally beats “no adaptation” on average return (0.55 vs 0.48), though Sharpe is still a bit lower and noisy.
-4. **Micro is a pilot, not the paper claim.** 8 stocks + 1 test year + tiny PPO is too small to conclude. We need a fuller run.
+Protocol: paper ARD, sim-calibrated \(h\), causal eval. 28 tickers (WBA/DOW dropped). Dates 2008-05-01 → 2025-04-29. Pilot PPO budgets (pretrain 1024 / finetune 256).
 
-## Reduced DOW30 on molab (GPU)
-
-Protocol: paper ARD, sim-calibrated \(h\), causal eval. 28 tickers (WBA/DOW dropped). Dates 2008-05-01 → 2025-04-29. Commit `2dcdaae`.
-
-| Seed | Status | Notes |
+| Seed | Status | Device / time |
 |---:|---|---|
-| 0 (bad run, CR≈−1) | **Discard** | WBA zeros / DOW IPO wipeout |
-| 0 (re-run `…T123541Z`) | **Done / usable** | ~13 min CUDA |
-| 1 (`…T131334Z`) | **Done / usable** | 23.3 min CUDA (MLP-PPO on GPU is slow) |
-| 2 | **Next** | force **CPU** in notebook (`dd7d687`); ~15–30 min |
+| 0 (bad CR≈−1) | **Discard** | WBA/DOW wipeout |
+| 0 re-run `…T123541Z` | **Usable** | CUDA ~13 min |
+| 1 `…T131334Z` | **Usable** | CUDA 23.3 min |
+| 2 `…T144354Z` | **Usable** | CPU ~60+ min |
 
-### Portfolio CR (causal) — seeds 0 and 1
+### Portfolio CR (causal)
 
-| Variant | seed 0 | seed 1 |
-|---|---:|---:|
-| no_adapt_default | **0.66** | **0.65** |
-| default_2.5 | 0.27 | −0.05 |
-| budget_0.5 | −0.12 | −0.47 |
-| budget_1 | −0.43 | 0.12 |
-| budget_2 | −0.12 | −0.21 |
+| Variant | seed 0 | seed 1 | seed 2 | **mean** |
+|---|---:|---:|---:|---:|
+| no_adapt_default | 0.66 | 0.65 | 0.64 | **0.65** |
+| default_2.5 | 0.27 | −0.05 | −0.27 | −0.01 |
+| budget_0.5 | −0.12 | −0.47 | −0.44 | −0.34 |
+| budget_1 | −0.43 | 0.12 | −0.29 | −0.20 |
+| budget_2 | −0.12 | −0.21 | −0.28 | −0.20 |
 
-Calibration (both seeds): budget_1 / budget_2 within tolerance; budget_0.5 hits \(h=64\sigma\) ceiling.
+Calibration: budgets 1 & 2 within tolerance on all seeds; budget 0.5 often hits \(h=64\sigma\) ceiling (seed 2 barely within tolerance at ceiling).
 
-Plain English so far: **no adaptation (~0.65 CR) beats adapt-on-alarm on both seeds**; fewer alarms do not clearly help.
+### Plain English (reduced pilot)
+
+1. **Calibration works** for ~1–2 alarms/yr on no-change sims.
+2. **No adaptation (~0.65 CR) clearly beats every adapt-on-alarm setting** across 3 seeds.
+3. **Fewer alarms do not fix adaptation** — stricter budgets stay negative on average.
+4. Still **pilot-scale** (not paper Table 2 / NAS100 budgets). Do not overclaim.
 
 ## What is still needed for the paper
 
-1. Reduced seed **2** on molab (CPU; leave tab open). Notebook already queues it.
-2. Aggregate 3-seed means + write-up (detector mismatch, sim calibration, portfolios, limitations).
+1. ~~Reduced seeds 0–2~~ **Done**
+2. **Write-up:** detector mismatch (repo vs paper), sim calibration, 3-seed portfolio table, limitations (pilot compute, budget_0.5 ceiling, MLP-PPO device notes).
 
 ## Hardware rules (for the human)
 
 | Where | Use for | Typical time |
 |---|---|---|
-| **Laptop (Cursor open)** | debug, micro runs, aggregation | minutes to ~15 min |
-| **molab** | anything that needs lots of RAM or >30 min | leave the browser tab open until done |
+| **Laptop (Cursor open)** | debug, micro runs, aggregation, write-up | minutes to ~15 min |
+| **molab** | reduced seeds (done) | leave tab open until done |
 
 I will always warn before starting anything that needs the laptop open for long or that must go to molab.
