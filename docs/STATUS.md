@@ -38,27 +38,27 @@ Protocol: paper ARD, sim-calibrated \(h\), causal eval. 28 tickers (WBA/DOW drop
 | Seed | Status | Notes |
 |---:|---|---|
 | 0 (bad run, CR≈−1) | **Discard** | WBA zeros / DOW IPO wipeout |
-| 0 (re-run `…T123541Z`) | **Done / usable** | Calibration OK for budgets 1 & 2; portfolio CR sane |
-| 1 | **Next** | ~13 min GPU |
-| 2 | **Next** | ~13 min GPU |
+| 0 (re-run `…T123541Z`) | **Done / usable** | ~13 min CUDA |
+| 1 (`…T131334Z`) | **Done / usable** | 23.3 min CUDA (MLP-PPO on GPU is slow) |
+| 2 | **Next** | force **CPU** in notebook (`dd7d687`); ~15–30 min |
 
-### Seed 0 portfolio (causal)
+### Portfolio CR (causal) — seeds 0 and 1
 
-| Variant | CR | SR | MDD | test alarms/yr |
-|---|---:|---:|---:|---:|
-| no_adapt_default | **0.66** | **0.75** | 0.22 | 4.82 |
-| default_2.5 | 0.27 | 0.36 | 0.32 | 4.82 |
-| budget_0.5 | −0.12 | −0.06 | 0.38 | 2.21 |
-| budget_1 | −0.43 | −0.48 | 0.57 | 3.01 |
-| budget_2 | −0.12 | −0.03 | 0.44 | 3.01 |
+| Variant | seed 0 | seed 1 |
+|---|---:|---:|
+| no_adapt_default | **0.66** | **0.65** |
+| default_2.5 | 0.27 | −0.05 |
+| budget_0.5 | −0.12 | −0.47 |
+| budget_1 | −0.43 | 0.12 |
+| budget_2 | −0.12 | −0.21 |
 
-Calibration: budget_1 / budget_2 within tolerance; budget_0.5 hits search ceiling at \(h=64\sigma\) (holdout ≈0.69/yr vs target 0.5).
+Calibration (both seeds): budget_1 / budget_2 within tolerance; budget_0.5 hits \(h=64\sigma\) ceiling.
 
-Plain English so far (1 seed only): **no adaptation beats every adapt-on-alarm setting**; stricter false-alarm budgets do not help portfolio CR on this seed.
+Plain English so far: **no adaptation (~0.65 CR) beats adapt-on-alarm on both seeds**; fewer alarms do not clearly help.
 
 ## What is still needed for the paper
 
-1. Reduced seeds **1–2** on molab (~13 min each GPU; leave tab open). Notebook `JOBS` already pointed at those seeds after this update.
+1. Reduced seed **2** on molab (CPU; leave tab open). Notebook already queues it.
 2. Aggregate 3-seed means + write-up (detector mismatch, sim calibration, portfolios, limitations).
 
 ## Hardware rules (for the human)
