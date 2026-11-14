@@ -69,13 +69,13 @@ def _():
     REPO_DIR = "/tmp/ReCAP-study"
     BRANCH = "study-sunday"
 
-    # Reduced seed 0 is done (usable). Next: seeds 1 and 2 (~13 min each on GPU).
+    # Reduced seed 0 is done (usable). Run ONE seed at a time so timing is visible.
+    # Expected: ~13 min per seed on GPU. If >25 min with live logs stalled, stop.
     # Each item: (profile, seed, finetune_timesteps_or_None, tag)
-    #   profile: "micro" (tiny) or "reduced" (fuller DOW30)
-    #   finetune_timesteps_or_None: None = use the profile default
     JOBS = [
         ("reduced", 1, None, "reduced_seed1"),
-        ("reduced", 2, None, "reduced_seed2"),
+        # After seed 1 finishes cleanly, switch to:
+        # ("reduced", 2, None, "reduced_seed2"),
     ]
     return BRANCH, JOBS, REPO_DIR, REPO_URL
 
@@ -102,10 +102,12 @@ def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
 @app.cell
 def _(JOBS, mo, torch):
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    _gpu_name = torch.cuda.get_device_name(0) if device == "cuda" else "n/a"
     mo.md(
-        f"**Device:** `{device}` | cuda = `{torch.cuda.is_available()}`  \n"
+        f"**Device:** `{device}` | cuda = `{torch.cuda.is_available()}` | GPU = `{_gpu_name}`  \n"
         f"**Jobs queued:** `{JOBS}`  \n"
-        "If this is the first reduced run, time is unknown — watch the cell output."
+        "Expected ~**13 min/seed on GPU**. Live logs should keep moving. "
+        "If silent >5 min or total >25 min for one seed, stop the cell."
     )
     return (device,)
 
@@ -120,6 +122,7 @@ def _(JOBS, Path, device, mo, subprocess, time):
         _before = set(_study_dir.glob("study_*.json")) if _study_dir.exists() else set()
         _cmd = [
             "python",
+            "-u",
             "study/run_study.py",
             "--profile",
             str(_profile),
@@ -140,15 +143,27 @@ def _(JOBS, Path, device, mo, subprocess, time):
             _cmd.extend(["--finetune-timesteps", str(_ft)])
 
         print("Running:", " ".join(_cmd), flush=True)
+        print(f"Expect ~13 min on GPU for {_tag}. Streaming logs...", flush=True)
         _t0 = time.time()
-        _run = subprocess.run(_cmd, check=False, text=True, capture_output=True)
+        # Stream output live (old capture_output=True hid progress for the whole job).
+        _proc = subprocess.Popen(
+            _cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        _lines = []
+        assert _proc.stdout is not None
+        for _line in _proc.stdout:
+            _lines.append(_line)
+            print(_line, end="", flush=True)
+        _code = _proc.wait()
         _minutes = (time.time() - _t0) / 60.0
-        print(_run.stdout[-3000:] if _run.stdout else "")
-        if _run.returncode != 0:
-            print(_run.stderr[-5000:] if _run.stderr else "")
+        if _code != 0:
             raise RuntimeError(
                 f"job profile={_profile} seed={_seed} tag={_tag} failed "
-                f"(code {_run.returncode}) after {_minutes:.1f} min"
+                f"(code {_code}) after {_minutes:.1f} min"
             )
         _new = sorted(set(_study_dir.glob("study_*.json")) - _before)
         assert _new, f"job {_tag}: no study JSON written"
