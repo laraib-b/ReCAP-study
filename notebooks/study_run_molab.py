@@ -69,15 +69,14 @@ def _():
     REPO_DIR = "/tmp/ReCAP-study"
     BRANCH = "study-sunday"
 
-    # Reduced seed 0 is done (usable). Run ONE seed at a time so timing is visible.
-    # Expected: ~13 min per seed on GPU. If >25 min with live logs stalled, stop.
+    # Reduced seed 0 done. Seed 1 may still be finishing on molab.
+    # SB3 MLP-PPO is slower on GPU than CPU — force CPU for study jobs.
     # Each item: (profile, seed, finetune_timesteps_or_None, tag)
+    FORCE_DEVICE = "cpu"
     JOBS = [
-        ("reduced", 1, None, "reduced_seed1"),
-        # After seed 1 finishes cleanly, switch to:
-        # ("reduced", 2, None, "reduced_seed2"),
+        ("reduced", 2, None, "reduced_seed2"),
     ]
-    return BRANCH, JOBS, REPO_DIR, REPO_URL
+    return BRANCH, FORCE_DEVICE, JOBS, REPO_DIR, REPO_URL
 
 
 @app.cell
@@ -100,14 +99,14 @@ def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
 
 
 @app.cell
-def _(JOBS, mo, torch):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    _gpu_name = torch.cuda.get_device_name(0) if device == "cuda" else "n/a"
+def _(FORCE_DEVICE, JOBS, mo, torch):
+    device = FORCE_DEVICE
+    _gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "n/a"
     mo.md(
-        f"**Device:** `{device}` | cuda = `{torch.cuda.is_available()}` | GPU = `{_gpu_name}`  \n"
+        f"**Study device:** `{device}` (forced — SB3 MLP-PPO is slow on CUDA)  \n"
+        f"GPU present: `{torch.cuda.is_available()}` (`{_gpu_name}`) but unused for PPO.  \n"
         f"**Jobs queued:** `{JOBS}`  \n"
-        "Expected ~**13 min/seed on GPU**. Live logs should keep moving. "
-        "If silent >5 min or total >25 min for one seed, stop the cell."
+        "Watch live phase logs. One reduced seed is often ~15–30 min on CPU."
     )
     return (device,)
 
