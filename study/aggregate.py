@@ -15,13 +15,18 @@ from pathlib import Path
 import pandas as pd
 
 
-def load_runs(patterns: list[str], ard_mode: str, tag: str = "") -> list[dict]:
+def load_runs(patterns: list[str], ard_mode: str, tag: str | None = "") -> list[dict]:
+    """Load latest paper/repo run per seed.
+
+    tag=None means accept any tag (useful when seeds used different --tag values).
+    tag="" means only untagged runs.
+    """
     latest: dict[int, dict] = {}
     for path in sorted({p for pattern in patterns for p in glob.glob(pattern)}):
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         if payload.get("ard_mode") != ard_mode or "results" not in payload:
             continue
-        if payload.get("tag", "") != tag:
+        if tag is not None and payload.get("tag", "") != tag:
             continue
         seed = int(payload["seed"])
         if seed not in latest or payload["created_utc"] > latest[seed]["created_utc"]:
@@ -80,11 +85,20 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("patterns", nargs="+")
     parser.add_argument("--ard-mode", default="paper")
-    parser.add_argument("--tag", default="", help="Only runs with this experiment tag ('' = untagged)")
+    parser.add_argument(
+        "--tag",
+        default="",
+        help="Only runs with this experiment tag ('' = untagged; use --any-tag for all tags)",
+    )
+    parser.add_argument(
+        "--any-tag",
+        action="store_true",
+        help="Ignore tag differences (keep latest paper/repo run per seed)",
+    )
     parser.add_argument("--out", type=Path, default=Path("results/tables"))
     args = parser.parse_args()
 
-    runs = load_runs(args.patterns, args.ard_mode, args.tag)
+    runs = load_runs(args.patterns, args.ard_mode, None if args.any_tag else args.tag)
     if not runs:
         raise SystemExit("No matching runs.")
     portfolio, detector, synthetic = run_rows(runs)

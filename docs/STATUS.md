@@ -54,10 +54,18 @@ Calibration: budgets 1 & 2 within tolerance on all seeds; budget 0.5 often hits 
 3. **Fewer alarms do not fix adaptation** — stricter budgets stay negative on average.
 4. Still **pilot-scale** (not paper Table 2 / NAS100 budgets). Do not overclaim.
 
+## Canonical artifacts for partners
+
+- Full reduced JSONs: `results/runs/study_reduced_seed{0,1,2}_*.json`
+- Aggregate tables: `results/tables_reduced/`
+- Index: `results/README.md`
+- Protocol: `docs/DEVIATIONS.md`
+
 ## What is still needed for the paper
 
 1. ~~Reduced seeds 0–2~~ **Done**
-2. **Write-up:** detector mismatch (repo vs paper), sim calibration, 3-seed portfolio table, limitations (pilot compute, budget_0.5 ceiling, MLP-PPO device notes).
+2. ~~Push full results + clean partner README~~ **Done**
+3. **Write-up:** detector mismatch (repo vs paper), sim calibration, 3-seed portfolio table, limitations (pilot compute, budget_0.5 ceiling, MLP-PPO device notes).
 
 ## Hardware rules (for the human)
 

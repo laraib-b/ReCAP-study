@@ -10,6 +10,8 @@ This folder extends the upstream minimal ReCAP implementation. It does **not** r
 - Synthetic-shift detector diagnostics
 - Reproducible configs and saved outputs for the research write-up
 
+Saved results for partners live under `results/` (see `results/README.md`), not under gitignored `outputs/`.
+
 ## Upstream pin
 
 - Repo: https://github.com/Dumail/ReCAP
