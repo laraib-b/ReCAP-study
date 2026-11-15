@@ -6,20 +6,26 @@ Fork of the minimal [ReCAP](https://github.com/Dumail/ReCAP) implementation with
 
 **Short answer (pilot):** calibration works on no-change simulations; on reduced DOW30, **no adaptation beats every adapt-on-alarm setting**. See `docs/STATUS.md` and `results/`.
 
-## Repo map (what partners need)
+## If you already cloned an older copy
+
+Read **`docs/PARTNERS.md`** first (removed notebooks, where results live, how to pull).
+
+## Repo map (submission surface)
 
 | Path | Role |
 |---|---|
-| `recap/` | Upstream ReCAP core (PPO, ARD, gate, env) + small study fixes (e.g. drop unusable tickers) |
-| `study/` | Study protocol: paper-mode ARD streaming, FA calibration, causal eval, diagnostics, aggregate |
+| `recap/` | Upstream ReCAP core + small study fixes (e.g. drop unusable tickers) |
+| `study/` | Study protocol: paper-mode ARD, FA calibration, causal eval, diagnostics, aggregate |
 | `results/` | **Canonical run JSONs + mean±sd tables** for write-up / plots |
-| `docs/` | Protocol deviations, setup, status |
-| `notebooks/study_run_molab.py` | Molab/marimo runner for reduced seeds |
-| `notebooks/study_run_colab.ipynb` | Colab study notebook |
-| `tests/` | Smoke + calibration unit tests |
-| `main.py` | Upstream entrypoint (unchanged workflow) |
+| `docs/` | Protocol, reproduce recipes, partner sync, status |
+| `notebooks/study_run_molab.py` | **Primary** cloud runner (all ablation recipes via `JOBS`) |
+| `notebooks/study_run_colab.ipynb` | Optional Colab study notebook |
+| `tests/` | Smoke + calibration + marimo static checks |
+| `main.py` | Upstream entrypoint |
 
-Not for submission as “paper replication”: training budgets here are **pilot-scale** (below paper Table 2). Label results as such (`docs/DEVIATIONS.md`).
+Removed on purpose: `notebooks/first_run_colab.ipynb`, `notebooks/first_run_kaggle.ipynb` (unused demos).
+
+Not a paper Table 2 replication: training budgets are **pilot-scale** (`docs/DEVIATIONS.md`).
 
 ## Quick start
 
@@ -29,26 +35,14 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip install pytest tabulate
-.\.venv\Scripts\python.exe -m pytest tests/test_smoke.py tests/test_study_calibration.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_smoke.py tests/test_study_calibration.py tests/test_marimo_notebooks.py -q
 ```
 
-Micro study (laptop, ~8–15 min/seed):
+## How experiments were run
 
-```powershell
-.\.venv\Scripts\python.exe study/run_study.py --profile micro --dataset DOW30 --device cpu --seed 0 --disable-local-cache --no-adapt-control --ard-mode paper
-```
+See **`docs/REPRODUCE.md`** for the exact micro / ft256 / ft1024 / reduced commands.
 
-Reduced DOW30 (prefer molab/Colab; ~15–60+ min/seed):
-
-```powershell
-.\.venv\Scripts\python.exe study/run_study.py --profile reduced --dataset DOW30 --device cpu --seed 0 --disable-local-cache --no-adapt-control --ard-mode paper --tag reduced_seed0
-```
-
-Aggregate:
-
-```powershell
-.\.venv\Scripts\python.exe study/aggregate.py "results/runs/study_reduced_seed*_2026*.json" --ard-mode paper --any-tag --out results/tables_reduced
-```
+Cloud re-run: upload `notebooks/study_run_molab.py` → edit `JOBS` → Run all.
 
 ## Results to use
 
@@ -66,7 +60,7 @@ Headline reduced DOW30 (3 seeds, causal, paper ARD):
 
 ## Branches
 
-- `main` — partner-facing study + results (default)
-- `study-sunday` — same tip used during molab runs
+- `main` — partner-facing default (use this)
+- `study-sunday` — kept equal to `main` for older molab clones
 
 Upstream pin: Dumail/ReCAP (see `study/README.md`).

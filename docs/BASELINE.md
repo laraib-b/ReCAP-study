@@ -1,28 +1,23 @@
-# Baseline / first-run log
+# Baseline / environment log
 
-## Environment (this device)
+## Environment (author laptop)
 
 - OS: Windows 10
 - CPU: Intel Core i7-8650U (no NVIDIA GPU)
 - RAM: ~8 GB
-- Python: 3.11.9 via `D:\quant\venvs\recap-study`
-- Upstream commit: `68143bb`
-- Core deps installed: numpy, pandas, torch, gymnasium, stable-baselines3, yfinance, pytest
-- `finrl` not required for synthetic smoke; still needed for ticker lists in `main.py` / real-market CLI
+- Python: 3.11
+- Upstream commit pin: `68143bb` (Dumail/ReCAP)
+- Study cloud: molab (CPU forced for PPO)
 
-## Patch applied for NumPy 2.x
-
-`recap/data.py` `_calculate_turbulence`: copy covariance before in-place add (read-only array under NumPy 2).
-
-## First successful run
+## First successful smoke
 
 - Command: `python study/smoke_run.py`
 - Mode: synthetic 3-asset / ~80 business days, tiny PPO budgets
-- Output: `outputs/smoke/smoke_metrics.json`
-- Result: completed with CR/SR/MDD emitted (smoke metrics are not research findings)
+- Output: `outputs/smoke/smoke_metrics.json` (local; gitignored)
+- Result: pipeline runs; smoke metrics are not research findings
 
-## Next
+## Study path (current)
 
-1. Install `finrl` (or vendor tickers) for DOW30/NAS100 CLI
-2. Colab notebook: `notebooks/first_run_colab.ipynb` for heavier runs
-3. Causal eval + calibration under `study/`
+1. Micro + finetune ablations on laptop (`docs/REPRODUCE.md`)
+2. Reduced DOW30 seeds on molab (`notebooks/study_run_molab.py`)
+3. Canonical numbers in `results/`; status in `docs/STATUS.md`

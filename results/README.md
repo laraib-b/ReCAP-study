@@ -2,6 +2,9 @@
 
 Canonical artifacts for the false-alarm calibration study. Prefer these paths over `outputs/` (gitignored local scratch).
 
+How the numbers were produced: **`docs/REPRODUCE.md`**.  
+If your clone is old: **`docs/PARTNERS.md`**.
+
 ## What to open first
 
 | Artifact | Use for |

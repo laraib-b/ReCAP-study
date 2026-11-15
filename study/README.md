@@ -21,9 +21,9 @@ Saved results for partners live under `results/` (see `results/README.md`), not 
 
 | Where | Best for | Notes |
 |---|---|---|
-| Cursor / local CLI | Smoke tests, calibration, analysis | Prefer Python **3.10 or 3.11** (not 3.13) |
-| Local Jupyter | Interactive debugging | Same venv as CLI |
-| Google Colab | Heavier NAS100 / multi-seed runs | Use `notebooks/first_run_colab.ipynb` |
+| Local CLI | Micro / analysis | Python **3.10 or 3.11**; see `docs/REPRODUCE.md` |
+| **molab** | Reduced / cloud reproduce | `notebooks/study_run_molab.py` — edit `JOBS` |
+| Colab | Optional | `notebooks/study_run_colab.ipynb` only |
 
 ## Quick local smoke (after venv + deps)
 
@@ -35,10 +35,8 @@ python study/smoke_run.py
 ## Study run (causal + FA calibration)
 
 ```bash
-python study/run_study.py --profile micro --dataset DOW30 --seed 0 --disable-local-cache --no-adapt-control
-python study/aggregate.py outputs/study/study_....json
+python study/run_study.py --profile micro --dataset DOW30 --seed 0 --disable-local-cache --no-adapt-control --ard-mode paper
+python study/aggregate.py "results/runs/study_*.json" --ard-mode paper --any-tag --out results/tables
 ```
 
-Colab notebook: `notebooks/study_run_colab.ipynb`
-
-See `docs/DEVIATIONS.md` for protocol claims and limits.
+Full recipe list: `docs/REPRODUCE.md`. Protocol claims/limits: `docs/DEVIATIONS.md`. Partner sync: `docs/PARTNERS.md`.

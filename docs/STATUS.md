@@ -60,12 +60,16 @@ Calibration: budgets 1 & 2 within tolerance on all seeds; budget 0.5 often hits 
 - Aggregate tables: `results/tables_reduced/`
 - Index: `results/README.md`
 - Protocol: `docs/DEVIATIONS.md`
+- Reproduce recipes: `docs/REPRODUCE.md`
+- Sync old clones: `docs/PARTNERS.md`
+- Cloud runner: `notebooks/study_run_molab.py` only (no `first_run_*`)
 
 ## What is still needed for the paper
 
 1. ~~Reduced seeds 0–2~~ **Done**
 2. ~~Push full results + clean partner README~~ **Done**
-3. **Write-up:** detector mismatch (repo vs paper), sim calibration, 3-seed portfolio table, limitations (pilot compute, budget_0.5 ceiling, MLP-PPO device notes).
+3. ~~Submission-ready notebook/docs cleanup~~ **Done**
+4. **Write-up:** detector mismatch (repo vs paper), sim calibration, 3-seed portfolio table, limitations (pilot compute, budget_0.5 ceiling, MLP-PPO device notes).
 
 ## Hardware rules (for the human)
 

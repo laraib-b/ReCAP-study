@@ -14,8 +14,11 @@
 
 """ReCAP false-alarm study runner for molab (marimo).
 
-Upload this file to https://molab.new, enable GPU if available, then Run all.
+This is the only cloud front door for reproducing study ablations.
+Upload to https://molab.new, edit the JOBS cell, Run all.
 Leave the browser tab open until the job finishes.
+
+Canonical pilot results are already in git under results/ — re-run only to reproduce.
 """
 
 import marimo
@@ -48,15 +51,14 @@ def _(mo):
 
         **Leave this tab open until the run finishes.** Closing it can kill the job.
 
-        What this run does:
+        What each job does:
         - paper-mode ARD (one-sided CUSUM, μ₀ re-estimated after alarms)
         - calibrate \(h\) on no-change simulations (0.5 / 1 / 2 alarms/year)
         - causal portfolio eval (no look-ahead max selection)
         - injected-shift diagnostic
 
-        Default job below is **reduced profile, seed 0** — a timing/memory check
-        for the fuller DOW30 setting (longer dates, all tickers, larger PPO).
-        Micro pilots already finished on the laptop.
+        Edit **only** the `JOBS` cell. Recipes for micro / ft256 / ft1024 / reduced
+        are documented in `docs/REPRODUCE.md`. Pilot results already live in `results/`.
         """
     )
     return
@@ -67,15 +69,20 @@ def _():
     # ---- edit only this cell when you want a different job ----
     REPO_URL = "https://github.com/laraib-b/ReCAP-study.git"
     REPO_DIR = "/tmp/ReCAP-study"
-    BRANCH = "study-sunday"
+    BRANCH = "main"  # same tip as study-sunday
 
-    # Reduced seed 0 done. Seed 1 may still be finishing on molab.
     # SB3 MLP-PPO is slower on GPU than CPU — force CPU for study jobs.
     # Each item: (profile, seed, finetune_timesteps_or_None, tag)
+    #
+    # Historical recipes (uncomment one block; run one seed at a time on molab):
+    # JOBS = [("micro", 0, 64, "micro_ft64_seed0")]
+    # JOBS = [("micro", 0, 256, "micro_ft256_seed0")]
+    # JOBS = [("micro", 0, 1024, "micro_ft1024_seed0")]
+    # JOBS = [("reduced", 0, None, "reduced_seed0")]
+    #
+    # Empty JOBS = clone + show instructions only (no long run).
     FORCE_DEVICE = "cpu"
-    JOBS = [
-        ("reduced", 2, None, "reduced_seed2"),
-    ]
+    JOBS = []
     return BRANCH, FORCE_DEVICE, JOBS, REPO_DIR, REPO_URL
 
 
@@ -94,7 +101,7 @@ def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
         sys.path.insert(0, REPO_DIR)
 
     commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
-    mo.md(f"**cwd:** `{os.getcwd()}`  \n**commit:** `{commit}`  \nExpect this to match the latest `study-sunday` push.")
+    mo.md(f"**cwd:** `{os.getcwd()}`  \n**commit:** `{commit}`  \nExpect this to match the latest `main` push.")
     return (commit,)
 
 
@@ -102,11 +109,16 @@ def _(BRANCH, Path, REPO_DIR, REPO_URL, mo, os, subprocess, sys):
 def _(FORCE_DEVICE, JOBS, mo, torch):
     device = FORCE_DEVICE
     _gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "n/a"
+    _jobs_msg = (
+        f"**Jobs queued:** `{JOBS}`"
+        if JOBS
+        else "**Jobs queued:** none — edit the JOBS cell (see `docs/REPRODUCE.md`), then re-run."
+    )
     mo.md(
         f"**Study device:** `{device}` (forced — SB3 MLP-PPO is slow on CUDA)  \n"
         f"GPU present: `{torch.cuda.is_available()}` (`{_gpu_name}`) but unused for PPO.  \n"
-        f"**Jobs queued:** `{JOBS}`  \n"
-        "Watch live phase logs. One reduced seed is often ~15–30 min on CPU."
+        f"{_jobs_msg}  \n"
+        "Watch live phase logs. One reduced seed is often ~15–60+ min on CPU."
     )
     return (device,)
 
@@ -116,6 +128,13 @@ def _(JOBS, Path, device, mo, subprocess, time):
     _study_dir = Path("/tmp/ReCAP-study/outputs/study")
     study_files = []
     job_timings = []
+
+    if not JOBS:
+        mo.md(
+            "No jobs configured. Set `JOBS` to a list of "
+            "`(profile, seed, finetune_or_None, tag)` tuples and re-run this cell."
+        )
+        return job_timings, study_files
 
     for _profile, _seed, _ft, _tag in JOBS:
         _before = set(_study_dir.glob("study_*.json")) if _study_dir.exists() else set()
@@ -142,7 +161,7 @@ def _(JOBS, Path, device, mo, subprocess, time):
             _cmd.extend(["--finetune-timesteps", str(_ft)])
 
         print("Running:", " ".join(_cmd), flush=True)
-        print(f"Expect ~13 min on GPU for {_tag}. Streaming logs...", flush=True)
+        print(f"Streaming logs for {_tag} (CPU; reduced often 15–60+ min)...", flush=True)
         _t0 = time.time()
         # Stream output live (old capture_output=True hid progress for the whole job).
         _proc = subprocess.Popen(
@@ -308,7 +327,9 @@ def _(mo):
 
 @app.cell
 def _(github_token, mo, study_files, subprocess):
-    if not github_token.value:
+    if not study_files:
+        _msg = mo.md("No study files from this session — nothing to push.")
+    elif not github_token.value:
         _msg = mo.md("Skipping GitHub push (no token). Use the Download button above instead.")
     else:
         for _path in study_files:
@@ -320,7 +341,7 @@ def _(github_token, mo, study_files, subprocess):
                     "--token",
                     github_token.value,
                     "--branch",
-                    "study-sunday",
+                    "main",
                 ],
                 check=False,
                 text=True,
@@ -330,7 +351,7 @@ def _(github_token, mo, study_files, subprocess):
             if _push.returncode != 0:
                 print(_push.stderr)
                 raise RuntimeError(f"GitHub push failed for {_path.name}")
-        _msg = mo.md(f"Pushed {len(study_files)} file(s) to `study-sunday` under `results/runs/`.")
+        _msg = mo.md(f"Pushed {len(study_files)} file(s) to `main` under `results/runs/`.")
     _msg
     return
 
@@ -341,10 +362,10 @@ def _(mo):
         """
         ## After this run
 
-        1. Note the **minutes** in the timing table (that tells us how long seeds 1–2 will take).
-        2. Prefer **Download**, or push with a GitHub token.
-        3. Paste the compact JSON here (or tell me the GitHub path) so I can update the paper tables.
-        4. If it OOM / crashes: paste the error — we may need fewer tickers or a smaller PPO budget.
+        1. Prefer **Download**, or push with a GitHub token.
+        2. Copy new JSONs into `results/runs/` on your clone and re-aggregate (`docs/REPRODUCE.md`).
+        3. For write-up numbers, prefer the canonical tables already in `results/tables_*`.
+        4. Partner sync notes: `docs/PARTNERS.md`.
         """
     )
     return
