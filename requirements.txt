@@ -5,3 +5,5 @@ gymnasium>=0.29
 stable-baselines3>=2.0
 yfinance>=0.2
 finrl>=0.3
+
+matplotlib>=3.7

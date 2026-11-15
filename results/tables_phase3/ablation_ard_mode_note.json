@@ -1,0 +1,33 @@
+{
+  "ablation": "ard_mode_repo_vs_paper",
+  "evidence_file": "results/runs/study_micro_dow30_seed0_20261112T185311Z_summary.json",
+  "finding": "Under released repo-mode ARD (two-sided, fixed mu0), calibration could not reach 0.5\u20132 alarms/yr targets (budget_0.5 marked infeasible at h\u2248128\u03c3). Paper-mode ARD enables feasible calibration for budgets 1 and 2; budget 0.5 often hits the h=64\u03c3 ceiling on reduced runs.",
+  "status": "documented_from_existing_run",
+  "calibrations": {
+    "budget_0.5": {
+      "target": 0.5,
+      "threshold_scale": 127.99999952502549,
+      "train_alarms_per_year": 2.129577464788732,
+      "feasible": false
+    },
+    "budget_1": {
+      "target": 1.0,
+      "threshold_scale": 127.99999952502549,
+      "train_alarms_per_year": 2.129577464788732,
+      "feasible": false,
+      "alias_of": "budget_0.5"
+    },
+    "budget_2": {
+      "target": 2.0,
+      "threshold_scale": 127.99999952502549,
+      "train_alarms_per_year": 2.129577464788732,
+      "feasible": true,
+      "alias_of": "budget_0.5"
+    },
+    "train_alarm_dates_at_128sigma": [
+      "2020-01-30",
+      "2020-03-13",
+      "2020-04-28"
+    ]
+  }
+}

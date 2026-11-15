@@ -1,0 +1,6 @@
+method,family,CR,SR,MDD,notes
+budget_0.5,study_RL,-0.344 ± 0.191,-0.342 ± 0.243,0.541 ± 0.144,causal FA-calibrated ReCAP pilot
+budget_1,study_RL,-0.198 ± 0.284,-0.139 ± 0.346,0.517 ± 0.124,causal FA-calibrated ReCAP pilot
+budget_2,study_RL,-0.204 ± 0.081,-0.113 ± 0.068,0.506 ± 0.074,causal FA-calibrated ReCAP pilot
+default_2.5,study_RL,-0.014 ± 0.271,0.076 ± 0.276,0.432 ± 0.115,causal FA-calibrated ReCAP pilot
+no_adapt_default,study_RL,0.649 ± 0.009,0.747 ± 0.010,0.220 ± 0.002,causal FA-calibrated ReCAP pilot

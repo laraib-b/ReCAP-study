@@ -1,0 +1,9 @@
+{
+  "primary_experiment": "reduced DOW30, 3 seeds, paper ARD, causal eval",
+  "sources": {
+    "portfolio": "results/tables_reduced/portfolio_per_seed.csv",
+    "detector": "results/tables_reduced/detector_per_seed.csv",
+    "market_baselines": "results/tables_phase3/market_baselines.csv"
+  },
+  "warning": "Pilot-scale PPO budgets; not paper Table 2 / NAS100 replication."
+}
